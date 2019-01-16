@@ -9,9 +9,9 @@ tt1 = tic;
 Params.Tmont = 30;
 
 Params.n  =  200;   % Number of rows of the low rank matrix
-Params.q  =  100;   % Number of columns of the matrix for LRPR
+Params.q  =  200;   % Number of columns of the matrix for LRPR
 Params.r  =  2;     % Rank
-Params.m = 100;     % Number of measurements
+Params.m = 80;     % Number of measurements
 
 Params.tnew = 10;    % Total number of main loops of new LRPR
 Params.told = 10;    % Total number of main loops of Old LRPR
@@ -19,7 +19,7 @@ Params.told = 10;    % Total number of main loops of Old LRPR
 m_b = Params.m;          %Number of measuremnets for coefficient estimate
 m_u = Params.m;           % Number of measuremnets for subspace estimate
 m_init = Params.m;       % Number of measuremnets for init of subspace
-%m_init = 100;
+%m_init = 50;
 
 %Params.m  =  m_init + (m_b+m_u)*Params.tot;% Number of measurements
 
@@ -218,7 +218,7 @@ xlabel('outer loop iteration (t)', 'Fontsize', 15)
 ylabel(stry, 'Interpreter', 'latex', 'Fontsize', 15)
 l1 = legend('LRPR-prac', 'LRPR-theory', 'LRPR-AltMin');
 set(l1, 'Fontsize', 15)
-t1 = title('m = 100, n=200, r=2, q = 100');
+t1 = title('m = 80, n=q=200, r=2');
 set(t1, 'Fontsize', 15)
 
 % figure;

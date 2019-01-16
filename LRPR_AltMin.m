@@ -63,7 +63,7 @@ for t = 1 : Params.told
         
     end
 %     Uvec    =   cgls_new(@mult_H, @mult_Ht , Zvec, 0, 10^-14,20);
-    Uvec    =   cgls_new(@mult_H, @mult_Ht , Zvec, 0, 10^-16,40);
+    Uvec    =   cgls_new(@mult_H, @mult_Ht , Zvec, 0, 10^-16,30);
     Uhat    =   reshape(Uvec, Params.n, Params.r);
     
     
