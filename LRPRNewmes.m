@@ -1,5 +1,6 @@
 function [B_hat, Uo, X_hat, Uo_track] = LRPRNewmes(Params, Paramsrwf, Y, Ysqrt, A, m_u, m_b, m_init, X)
-[Ysqrt_init,~,Ai] = Generate_Mes(X,Params,m_init);
+        
+[~,Y_init,Ai] = Generate_Mes(X,Params,m_init);
 for  o = 1 :Params.tnew % Main loop
     %%%%%%%
     % Initializing the subspace
@@ -7,7 +8,9 @@ for  o = 1 :Params.tnew % Main loop
     if o == 1
         Yu      =   zeros(Params.n, Params.n);
         for nh = 1 : Params.q
-            Yu  =   Yu + Ai(:,:,nh) * diag(Ysqrt_init(:,nh)) * Ai(:,:,nh)';
+            normest = sqrt((9/Params.m) * Y_init(:,nh)' * Y_init(:, nh));
+            Ytr = Y_init(:,nh) .* (abs(Y_init(:, nh)) > normest);
+            Yu  =   Yu + Ai(:,:,nh) * diag(Ytr) * Ai(:,:,nh)';
         end
         Yu      =   Yu / Params.q / Params.m;
         [P,~,~] =   svds(Yu, Params.r);
@@ -16,6 +19,7 @@ for  o = 1 :Params.tnew % Main loop
     end
     Uo_track{o} = Uo;
     %%%%%
+
     [Ysqrt1,~,Ab] = Generate_Mes(X,Params,m_b);
     B_hat  =   zeros(Params.r, Params.q);
     [Ysqrt_u,~,Au] = Generate_Mes(X,Params,m_u);

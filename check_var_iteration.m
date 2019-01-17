@@ -1,6 +1,6 @@
 %%  Attempts to speed up LRPR new algorithm
 
-close all
+%close all
 clear;
 clc;
 
@@ -40,7 +40,7 @@ Paramsrwf.cplx_flag   = 0;
 % Paramstwf.alpha_ub    = 5;
 % Paramstwf.alpha_lb    = 0.3;
 % Paramstwf.grad_type   = 'TWF_Poiss';
-
+%Params.seed = rng;
 err_SE_iter = zeros(3, Params.tnew, Params.Tmont);
 
 file_name = strcat(['Copmare_n', num2str(Params.n), 'm', num2str(Params.m), 'r', num2str(Params.r), 'q', num2str(Params.q)]);
@@ -49,6 +49,7 @@ file_name_mat = strcat(file_name,'.mat');
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%Generating U and B and X
+%rng('shuffle')
 U       =   orth(randn(Params.n, Params.r));
 B       =   randn(Params.r, Params.q);
 X       =   U * B;
@@ -200,14 +201,17 @@ fprintf('RWF:\t\t\t%2.2e\n', mean_Time_RWF);
 toc(tt1)
 % for ii = 1 : 3
 %     for jj = 1: 10
-%         tmp = err_SE_iter(ii, jj, :);
-%         final_err_SE(ii,jj) = mean(tmp);
+%         tmp1 = err_SE_iter(ii, jj, 1:19);
+%         tmp2 = err_SE_iter(ii, jj, 21:end);
+%         final_err_SE(ii,jj) = (mean(tmp1) * 19 + mean(tmp2) * 10)/29;
 %     end
 % end
 
 final_err_SE = mean(err_SE_iter, 3);
-
+final_err_SE_med = median(err_SE_iter, 3);
+final_err_SE_std = std(err_SE_iter, 0, 3);
 figure;
+subplot(211)
 plot(log10(final_err_SE(1, :)), 'rs--', 'LineWidth', 2);
 hold
 plot(log10(final_err_SE(2, :)), 'gs-.', 'LineWidth', 2);
@@ -220,6 +224,38 @@ l1 = legend('LRPR-prac', 'LRPR-theory', 'LRPR-AltMin');
 set(l1, 'Fontsize', 15)
 t1 = title('m = 80, n=q=200, r=2');
 set(t1, 'Fontsize', 15)
+
+% subplot(212)
+% plot(log10(final_err_SE_med(1, :)), 'rs--', 'LineWidth', 2);
+% hold
+% plot(log10(final_err_SE_med(2, :)), 'gs-.', 'LineWidth', 2);
+% plot(log10(final_err_SE_med(3, :)), 'bo-', 'LineWidth', 2);
+% axis tight
+% stry = '$$\log(SE(\hat{U}^t, U))$$';
+% xlabel('outer loop iteration (t)', 'Fontsize', 15)
+% ylabel(stry, 'Interpreter', 'latex', 'Fontsize', 15)
+% l1 = legend('LRPR-prac', 'LRPR-theory', 'LRPR-AltMin');
+% set(l1, 'Fontsize', 15)
+% t1 = title('m = 80, n=q=200, r=2');
+% set(t1, 'Fontsize', 15)
+
+subplot(212)
+errorbar([1:10], log10(final_err_SE_med(1, :)), final_err_SE_std(1, :),...
+    'rs--', 'LineWidth', 2);
+hold
+errorbar([1:10], log10(final_err_SE_med(2, :)), final_err_SE_std(2, :),...
+    'gs-.', 'LineWidth', 2);
+errorbar([1:10], log10(final_err_SE_med(3, :)), final_err_SE_std(3, :),...
+    'bo-', 'LineWidth', 2);
+axis tight
+stry = '$$\log(SE(\hat{U}^t, U))$$';
+xlabel('outer loop iteration (t)', 'Fontsize', 15)
+ylabel(stry, 'Interpreter', 'latex', 'Fontsize', 15)
+l1 = legend('LRPR-prac', 'LRPR-theory', 'LRPR-AltMin');
+set(l1, 'Fontsize', 15)
+t1 = title('m = 80, n=q=200, r=2');
+set(t1, 'Fontsize', 15)
+
 
 % figure;
 % plot(log10(final_err(1, :)), 'rs--', 'LineWidth', 2);

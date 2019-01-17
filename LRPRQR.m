@@ -7,7 +7,9 @@ for  o = 1 :Params.tnew % Main loop
     if o == 1
         Yu      =   zeros(Params.n, Params.n);
         for nh = 1 : Params.q
-            Yu  =   Yu + A(:,:,nh) * diag(Y(:,nh)) * A(:,:,nh)';
+            normest = sqrt((9/Params.m) * Y(:,nh)' * Y(:, nh));
+            Ytr = Y(:,nh) .* (abs(Y(:, nh)) > normest);
+            Yu  =   Yu + A(:,:,nh) * diag(Ytr) * A(:,:,nh)';
         end
         Yu      =   Yu / Params.q / Params.m;
         [P,~,~] =   svds(Yu, Params.r);

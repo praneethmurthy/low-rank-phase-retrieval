@@ -14,7 +14,9 @@ Xhat    =   zeros(Params.n, Params.q);
 tic;
 Yu  =   zeros(Params.n, Params.n);
 for k = 1 : Params.q
-    Yu 	=   Yu + A(:,:,k) * diag(Y(:,k)) * A(:,:,k)';
+    normest = sqrt((9/Params.m) * Y(:,k)' * Y(:, k));
+    Ytr = Y(:,k) .* (abs(Y(:, k)) > normest);
+    Yu 	=   Yu + A(:,:,k) * diag(Ytr) * A(:,:,k)';
 end
 
 Yu          =   Yu / Params.m / Params.q;
