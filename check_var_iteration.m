@@ -9,12 +9,12 @@ tt1 = tic;
 Params.Tmont = 1;
 
 Params.n  =  200;   % Number of rows of the low rank matrix
-Params.q  =  10000;   % Number of columns of the matrix for LRPR
-Params.r  =  2;     % Rank
+Params.q  =  100;   % Number of columns of the matrix for LRPR
+Params.r  =  1;     % Rank
 Params.m = 100;     % Number of measurements
 
-Params.tnew = 10;    % Total number of main loops of new LRPR
-Params.told = 10;    % Total number of main loops of Old LRPR
+Params.tnew = 5;    % Total number of main loops of new LRPR
+Params.told = 5;    % Total number of main loops of Old LRPR
 
 Params.m_b = Params.m;          %Number of measuremnets for coefficient estimate
 Params.m_u = Params.m;           % Number of measuremnets for subspace estimate
@@ -28,12 +28,12 @@ Params.m_init = Params.m;       % Number of measuremnets for init of subspace
 Paramsrwf.m  =  Params.m;% Number of measurements
 Paramsrwf.n  =  Params.n;% size of columns of coefficient matrix or x_k
 Paramsrwf.r  =  Params.r;% size of columns of coefficient matrix or b_k
-Paramsrwf.npower_iter = 50;% Number of loops for initialization of TWF with power method
+Paramsrwf.npower_iter = 100;% Number of loops for initialization of TWF with power method
 Paramsrwf.mu          = 0.2;% Parameter for gradient
-%Params.Tb_LRPRnew    = unique(ceil(linspace(30, 100, Params.tnew)));% Number of loops for b_k with simple PR
-Params.Tb_LRPRnew    = 85 * ones(1, Params.tnew);
+Params.Tb_LRPRnew    = unique(ceil(linspace(5, 12, Params.tnew)));% Number of loops for b_k with simple PR
+%Params.Tb_LRPRnew    = 85 * ones(1, Params.tnew);
 % Paramsrwf.Tb_LRPRnew    = 85;% Number of loops for b_k with simple PR
-Paramsrwf.TRWF           = 25;% Number of loops for b_k with simple PR
+Paramsrwf.TRWF           = 85;% Number of loops for b_k with simple PR
 Paramsrwf.cplx_flag   = 0;
 % Paramstwf.alpha_y     = 3;
 % Paramstwf.alpha_h     = 5;

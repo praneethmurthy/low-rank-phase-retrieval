@@ -13,7 +13,7 @@ Params.q  =  4000;   % Number of columns of the matrix for LRPR
 Params.r  =  2;     % Rank
 Params.m = 100;     % Number of measurements
 Params.alpha = 100;
-Params.L = 7;
+Params.L = 10;
 Params.thresh = 1e-1;
 
 Params.tnew = 10;    % Total number of main loops of new LRPR
@@ -58,7 +58,7 @@ t_1 = 2102;
 U0       =   orth(randn(Params.n, Params.r));
 Mse = randn(Params.n);
 Mse1 = (Mse - Mse')/2;
-U1 = expm(0.001 * Mse1) * U0;
+U1 = expm(0.08 * Mse1) * U0;
 
 B       =   randn(Params.r, Params.q);
 X       =   [U0 * B(:, 1 : t_1), U1* B(:, t_1 + 1 : end)];
@@ -90,7 +90,7 @@ for t = 1 : Params.Tmont
     [Ysqrt,Y,A] = Generate_Mes(X,Params,Params.m);
     tic;
     [B_new_sample, U_new_sample, U_track_new, t_calc] = ...
-        LRPR_track(Params, Paramsrwf, Y, Ysqrt, A, X);
+        LRPR_track_large(Params, Paramsrwf, Y, Ysqrt, A, X);
     TmpTLRPmes(t) = toc;
     ERULRPRmes(t) = eps;
     %ERULRPRmes(t)  =  abs(sin(subspace(U_new_sample, U)));
@@ -133,7 +133,7 @@ axis tight
 stry = '$$\log(SE(\hat{U}^t, U))$$';
 xlabel('time (t)', 'Fontsize', 15)
 ylabel(stry, 'Interpreter', 'latex', 'Fontsize', 15)
-
+title('SE = 0.8, PST-large', 'Fontsize', 15)
 % subplot(212)
 % plot(log10(final_err_SE_med(1, :)), 'rs--', 'LineWidth', 2);
 % hold

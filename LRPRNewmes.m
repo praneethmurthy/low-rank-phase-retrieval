@@ -47,7 +47,7 @@ for  o = 1 :Params.tnew % Main loop
         TempVec     =   Chat(:, nt) .* Ysqrt_u(:,nt);
         Zvec(strt_idx:end_idx, 1)   =   TempVec;
     end
-    Uvec    =   cgls_new(@mult_H, @mult_Ht , Zvec, 0, 1e-16,30);
+    Uvec    =   cgls_new(@mult_H, @mult_Ht , Zvec, 0, 1e-3,5);
     U_hat    =   reshape(Uvec, Params.n, Params.r);
     [Qu,~]  =  qr(U_hat);
     Uo  =  Qu(:, 1:Params.r);
