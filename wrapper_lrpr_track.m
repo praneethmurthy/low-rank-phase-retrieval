@@ -12,7 +12,7 @@ Params.n  =  200;   % Number of rows of the low rank matrix
 Params.q  =  4000;   % Number of columns of the matrix for LRPR
 Params.r  =  2;     % Rank
 Params.m = 100;     % Number of measurements
-Params.alpha = 80;
+Params.alpha = 100;
 Params.L = 7;
 Params.thresh = 1e-1;
 
@@ -54,11 +54,11 @@ file_name_mat = strcat(file_name,'.mat');
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%Generating U and B and X
-t_1 = 2000;
+t_1 = 2102;
 U0       =   orth(randn(Params.n, Params.r));
 Mse = randn(Params.n);
 Mse1 = (Mse - Mse')/2;
-U1 = expm(0.05 * Mse1) * U0;
+U1 = expm(0.001 * Mse1) * U0;
 
 B       =   randn(Params.r, Params.q);
 X       =   [U0 * B(:, 1 : t_1), U1* B(:, t_1 + 1 : end)];
