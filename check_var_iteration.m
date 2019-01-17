@@ -9,9 +9,9 @@ tt1 = tic;
 Params.Tmont = 1;
 
 Params.n  =  200;   % Number of rows of the low rank matrix
-Params.q  =  200;   % Number of columns of the matrix for LRPR
+Params.q  =  10000;   % Number of columns of the matrix for LRPR
 Params.r  =  2;     % Rank
-Params.m = 80;     % Number of measurements
+Params.m = 100;     % Number of measurements
 
 Params.tnew = 10;    % Total number of main loops of new LRPR
 Params.told = 10;    % Total number of main loops of Old LRPR

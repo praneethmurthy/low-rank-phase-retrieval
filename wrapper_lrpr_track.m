@@ -90,7 +90,7 @@ for t = 1 : Params.Tmont
     [Ysqrt,Y,A] = Generate_Mes(X,Params,Params.m);
     tic;
     [B_new_sample, U_new_sample, U_track_new, t_calc] = ...
-        LRPR_tracking_new(Params, Paramsrwf, Y, Ysqrt, A, X);
+        LRPR_track(Params, Paramsrwf, Y, Ysqrt, A, X);
     TmpTLRPmes(t) = toc;
     ERULRPRmes(t) = eps;
     %ERULRPRmes(t)  =  abs(sin(subspace(U_new_sample, U)));

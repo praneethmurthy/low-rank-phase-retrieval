@@ -1,4 +1,4 @@
-function [B_hat, Uo, Uo_track, t_calc] = LRPR_tracking_new(Params, Paramsrwf, Y, Ysqrt, A, X)
+function [B_hat, Uo, Uo_track, t_calc] = LRPR_track(Params, Paramsrwf, Y, Ysqrt, A, X)
 [~,k_max] = size(Y);
 det_mode = 0; %0  means not-detect and 1 means detect
 khat = [1];
