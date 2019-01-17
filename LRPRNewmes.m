@@ -1,6 +1,6 @@
-function [B_hat, Uo, X_hat, Uo_track] = LRPRNewmes(Params, Paramsrwf, Y, Ysqrt, A, m_u, m_b, m_init, X)
-        
-[~,Y_init,Ai] = Generate_Mes(X,Params,m_init);
+function [B_hat, Uo, X_hat, Uo_track] = LRPRNewmes(Params, Paramsrwf, Y, Ysqrt, A, X)
+
+[~,Y_init,Ai] = Generate_Mes(X,Params,Params.m_init);
 for  o = 1 :Params.tnew % Main loop
     %%%%%%%
     % Initializing the subspace
@@ -19,10 +19,10 @@ for  o = 1 :Params.tnew % Main loop
     end
     Uo_track{o} = Uo;
     %%%%%
-
-    [Ysqrt1,~,Ab] = Generate_Mes(X,Params,m_b);
+    
+    [Ysqrt1,~,Ab] = Generate_Mes(X,Params,Params.m_b);
     B_hat  =   zeros(Params.r, Params.q);
-    [Ysqrt_u,~,Au] = Generate_Mes(X,Params,m_u);
+    [Ysqrt_u,~,Au] = Generate_Mes(X,Params,Params.m_u);
     
     Chat   =   zeros(Params.m, Params.q);% Estimated phase
     %  Using Simple PR for estimating coefficients
@@ -52,12 +52,10 @@ for  o = 1 :Params.tnew % Main loop
     [Qu,~]  =  qr(U_hat);
     Uo  =  Qu(:, 1:Params.r);
     X_hat = Uo * B_hat;
-    
 end
 
     function x_out = mult_H(x_in)
         X_mat    =   reshape(x_in, Params.n, Params.r);
-        %    x_out    =   A_long * X_vec;
         x_out    =   zeros(Params.q*Params.m, 1);
         for na = 1: Params.q
             x_out((na-1)*Params.m + 1 : na*Params.m) = Au(:,:,na)' * X_mat * Bo(:,na);

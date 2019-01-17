@@ -6,7 +6,7 @@ clc;
 
 
 tt1 = tic;
-Params.Tmont = 30;
+Params.Tmont = 1;
 
 Params.n  =  200;   % Number of rows of the low rank matrix
 Params.q  =  200;   % Number of columns of the matrix for LRPR
@@ -16,9 +16,9 @@ Params.m = 80;     % Number of measurements
 Params.tnew = 10;    % Total number of main loops of new LRPR
 Params.told = 10;    % Total number of main loops of Old LRPR
 
-m_b = Params.m;          %Number of measuremnets for coefficient estimate
-m_u = Params.m;           % Number of measuremnets for subspace estimate
-m_init = Params.m;       % Number of measuremnets for init of subspace
+Params.m_b = Params.m;          %Number of measuremnets for coefficient estimate
+Params.m_u = Params.m;           % Number of measuremnets for subspace estimate
+Params.m_init = Params.m;       % Number of measuremnets for init of subspace
 %m_init = 50;
 
 %Params.m  =  m_init + (m_b+m_u)*Params.tot;% Number of measurements
@@ -91,7 +91,8 @@ for t = 1 : Params.Tmont
     % LRPR - theory
     %%%%%%%%%%%%%
     tic;
-    [B_new_sample, U_new_sample, X_new_sample, U_track_new] = LRPRNewmes(Params, Paramsrwf, Y, Ysqrt, A,  m_u, m_b, m_init, X);
+    [B_new_sample, U_new_sample, X_new_sample, U_track_new] = ...
+        LRPRNewmes(Params, Paramsrwf, Y, Ysqrt, A, X);
     TmpTLRPmes(t) = toc;
     ERULRPRmes(t)  =  abs(sin(subspace(U_new_sample, U)));
     fprintf('LRPR theory error U:\t %2.2e\t\t Time:\t %2.2e\n', ERULRPRmes(t), TmpTLRPmes(t));

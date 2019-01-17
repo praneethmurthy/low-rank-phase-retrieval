@@ -5,9 +5,9 @@ function [B_hat, Uo, X_hat, Uo_track] = LRPR_tracking(Params, Paramsrwf, Y, Ysqr
 track_mode = 1; %this means non-detect mode
 l = 0;
 j = 0;
-
+khat = [1];
 for kk = 1 : k_max
-    if(l==0)
+    if(~mod(kk + 1 , alpha) && )
         [Ysqrt_init,~,Ai] = Generate_Mes(X,Params,m_init);
         Yu      =   zeros(Params.n, Params.n);
         for nh = 1 : Params.q
