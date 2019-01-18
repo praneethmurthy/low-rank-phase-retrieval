@@ -45,7 +45,7 @@ for  o = 1 :Params.tnew % Main loop
         Ybk(:,:,nr,:) =  Afull_tk(Y.* Afull(repmat(Uupdt(:,:,nr), [1,1,Params.q])));
     end
     
-    B_hat  =   zeros(Params.r, Params.q);
+    B_hat  =   zeros(Params.n_1, Params.n_2, Params.q);
     
 %     for na = 1 : Params.q
 %         ybk = Uhat_vec' * reshape(Ybk(:,:,:,na),Params.n_1*Params.n_2,Params.r);
@@ -70,7 +70,7 @@ for  o = 1 :Params.tnew % Main loop
 
         Paramsrwf.Tb_LRPRnew = Params.Tb_LRPRnew(o);
         [bhat] = RWF_2d(sqrt(mean(Y(:, :, :,ni), 3)), Paramsrwf, A_pr, At_pr);
-        B_hat(:,ni) = bhat;
+        B_hat(:, :,ni) = bhat;
         x_k =  Uo *  B_hat(:,ni);
         Chat(:,ni) = (At_pr(x_k) >= 0) - (At_pr(x_k) < 0);
         X_hat(:, ni) = x_k;
