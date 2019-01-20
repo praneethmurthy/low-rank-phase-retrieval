@@ -51,7 +51,6 @@ for  o = 1 :Params.tnew % Main loop
         end_idx     =   strt_idx + Params.m - 1;
         TempVec     =   Chat(:,nt) .* Ysqrt(:,nt);
         Zvec(strt_idx:end_idx, 1)   =   TempVec;
-        
     end
     Uvec    =   cgls_new(@mult_H, @mult_Ht , Zvec, 0, 1e-16, 30);
     U_hat    =   reshape(Uvec, Params.n, Params.r);

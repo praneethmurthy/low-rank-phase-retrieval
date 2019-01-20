@@ -23,7 +23,19 @@
 temp/
 data/
 figures/
+results/
+
 
 #ignore vim swap files
 *.swp
+
+#other codes (older LRPR)
+RWFsimple_vid.m
+wrapper_video.m
+LRPR_prac_video.m
+TestOurinittwfP.m
+alt_min_phs_rtv_2D.m
+Test2Dvideo.m
+compute_grad2.m
+alt_min_init.m
 

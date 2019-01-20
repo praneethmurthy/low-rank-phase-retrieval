@@ -1,10 +1,11 @@
-function [B_hat, Uo, X_hat, Uo_track] = ...
+function [B_hat, Uo, Xhat3, Uo_track] = ...
     LRPR_prac_video(Params, Paramsrwf, Y, Afull, Afull_t, Afull_tk, Masks2)
 Ysqrt = sqrt(Y);
 %%contains some changes to consider the CDP setting. Check if it can be
 %%made general to be able to handle simulated data too
-
+%X_hat = zeros(100);
 for  o = 1 :Params.tnew % Main loop
+    fprintf('outer loop iteration %d\n', o)
     %%%%%%%
     % Initialization
     %%%%%%%
@@ -35,86 +36,77 @@ for  o = 1 :Params.tnew % Main loop
         Uhat            =    Uhat_vec;
         %[Qu,~] = qr(Uhat);
         
-        Uo = Uhat; %Qu(:, 1 : Params.r);
+        [Qu, ~] = BlockIter(Uhat, 50, Params.r); 
+        Uo = Qu(:, 1 : Params.r);
+        Uo_track{o} = Uo;
     end
     
     AUnew   =   zeros(Params.n_1*Params.n_2*Params.L,Params.q,Params.r);
     Ybk     =   zeros(Params.n_1,Params.n_2,Params.r,Params.q);
+    
     for nr  =   1 : Params.r
         AUnew(:,:,nr) =  reshape(Afull(repmat(Uupdt(:,:,nr),[1,1,Params.q])), Params.n_1*Params.n_2*Params.L,Params.q);
         Ybk(:,:,nr,:) =  Afull_tk(Y.* Afull(repmat(Uupdt(:,:,nr), [1,1,Params.q])));
     end
     
-    B_hat  =   zeros(Params.n_1, Params.n_2, Params.q);
+    B_hat  =   zeros(Params.r, Params.q);
     
-%     for na = 1 : Params.q
-%         ybk = Uhat_vec' * reshape(Ybk(:,:,:,na),Params.n_1*Params.n_2,Params.r);
-%         [b_t1,~,~]   =   svd(ybk);
-%         nb =   sqrt(sum(reshape(Y(:,:,:,na),Params.n_1*Params.n_2*Params.L,1))/Params.m);
-%         nc = Params.m*Params.r/(norm(reshape(AUnew(:,na,:),Params.n_1*Params.n_2*Params.L,Params.r),'fro')^2);
-%         norm_b_a_hat1=   sqrt(nc)* nb;
-%         Bhat(:,na)   =   norm_b_a_hat1 * b_t1(:,1);
-%     end
-    
-    %Chat   =   zeros(Params.m, Params.q);% Estimated phase
     %  Using Simple PR for estimating coefficients
     for ni = 1 : Params.q
-        %Amatrix  =  A(:,:,ni)' *  Uo;% Design matrices for coefficients
-        %A1  = @(I) Amatrix  * I;
-        %At  = @(Y) Amatrix' * Y;
-        %atrue = B(:,ni);
-        %[a, Relerrs] = TWFsimple(Y(:,ni),atrue, Paramstwf, A1, At);
+        
         Masks  =   Masks2(:,:,:,ni);
-        A_pr  = @(I)  fft2(conj(Masks) .* reshape(repmat(I,[1 Params.L]), size(I,1), size(I,2), Params.L));
-        At_pr = @(W) sum(Masks .* ifft2(W), 3) * size(W,1) * size(W,2);
+        A_pr  = @(I)  reshape(fft2(conj(Masks) .* ...
+            reshape(repmat(Uhat_vec * I, Params.L, 1), ...
+            Params.n_1, Params.n_2, Params.L)), [], 1);
+        At_pr = @(W) Params.n_1 * Params.n_2 * Uhat_vec' * reshape(sum(Masks .* ...
+            ifft2(reshape(W, Params.n_1, Params.n_2, Params.L)), 3), [], 1);
 
+        y_tmp = sqrt(reshape(Y(:, :, :, ni), [], 1));
         Paramsrwf.Tb_LRPRnew = Params.Tb_LRPRnew(o);
-        [bhat] = RWF_2d(sqrt(mean(Y(:, :, :,ni), 3)), Paramsrwf, A_pr, At_pr);
-        B_hat(:, :,ni) = bhat;
+        [bhat] = RWFsimple(y_tmp, Paramsrwf, A_pr, At_pr);
+        %size(bhat)
+        B_hat(:, ni) = bhat;
         x_k =  Uo *  B_hat(:,ni);
-        Chat(:,ni) = (At_pr(x_k) >= 0) - (At_pr(x_k) < 0);
-        X_hat(:, ni) = x_k;
+%        Chat(:,ni) = (At_pr(repmat(x_k, Params.L, 1)) >= 0) ...
+            %- (At_pr(repmat(x_k, Params.L, 1)) < 0);
+        %X_hat(:, ni) = x_k;
     end
-    [Qb,~]  =  qr(B_hat');
-    Bo   =   Qb(:,1:Params.r)';
+%     [Qb,~]  =  qr(B_hat');
+%     Bo   =   Qb(:,1:Params.r)';
+[Qb,~] = BlockIter(B_hat', 50, Params.r);
+Bo = Qb(:, 1:Params.r)';
+Xhat1    =   Uo*B_hat;
+Xhat3   =   reshape(Xhat1,Params.n_1,Params.n_2,Params.q);
+Chat     =   exp(1i*angle(Afull(Xhat3))); % Initial phase
+
     
     
-    % Estimating the subspace
-    Zvec    =   zeros(Params.m*Params.q, 1);
-    %tic;
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    %       Updating Uhat
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    for nt = 1 : Params.q
-        strt_idx    =   Params.m*(nt-1) + 1;
-        end_idx     =   strt_idx + Params.m - 1;
-        TempVec     =   Chat(:,nt) .* Ysqrt(:,nt);
-        Zvec(strt_idx:end_idx, 1)   =   TempVec;
-        
-    end
-    Uvec    =   cgls_new(@mult_H, @mult_Ht , Zvec, 0, 1e-16, 30);
-    U_hat    =   reshape(Uvec, Params.n, Params.r);
-    [Qu,~]  =  qr(U_hat);
+    K1       =   Chat .* Ysqrt;
+    Zvec     =   reshape(K1,Params.n_1*Params.n_2*Params.L*Params.q,1);
+    Uvec    =   cgls_new(@mult_H2, @mult_Ht2 , Zvec, 0,1e-6 ,3);
+    U_hat    =   reshape(Uvec, Params.n_1*Params.n_2, Params.r);
+    
+    
+    [Qu,~]  =  BlockIter(U_hat, 10, Params.r);
     Uo  =  Qu(:, 1:Params.r);
+    Uo_track{o} = Uo;
 end
-    function x_out = mult_H(x_in)
-        X_mat    =   reshape(x_in, Params.n, Params.r);
-        %    x_out    =   A_long * X_vec;
-        x_out    =   zeros(Params.q*Params.m, 1);
-        for na = 1: Params.q
-            x_out((na-1)*Params.m + 1 : na*Params.m) = Afull(:,:,na)' * X_mat * Bo(:,na);
-        end
-        
+    function i_out = mult_H2(i_in)
+        I_mat    =   reshape(i_in,(Params.n_1*Params.n_2), Params.r);
+        % i_out    =   zeros(Params.q*Params.m, 1);
+        Xmat        =    I_mat * Bo;
+        Xmat2   =   reshape(Xmat,Params.n_1,Params.n_2,Params.q);
+        Iout        =     Afull(Xmat2);
+        i_out       =     reshape(Iout,Params.q*Params.m, 1);
     end
 
+%   Defining mult_Ht
 
-    function w_out = mult_Ht(w_in)
-        
-        w_out   =   zeros(Params.n*Params.r, 1);
-        for na = 1: Params.q
-            tmp_vec  =   Afull(:,:,na) * w_in((na-1)*Params.m+1:na*Params.m);
-            w_out    =   w_out + kron(Bo(:,na), tmp_vec);
+    function w_out = mult_Ht2(w_in)
+        w_out   =   zeros(Params.n_1*Params.n_2*Params.r, 1);
+        TmpVec  =    permute(Afull_tk(reshape(w_in, Params.n_1,Params.n_2,Params.L,Params.q)), [1,2,4,3]);
+        for nk = 1: Params.q
+            w_out    =   w_out + kron(Bo(:,nk), reshape(TmpVec(:,:,nk), Params.n_1*Params.n_2, 1));
         end
-        
     end
 end

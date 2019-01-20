@@ -1,5 +1,4 @@
 function [z] = RWFsimple(y1, Params, A, At)
-
 %% Initialization
 npower_iter = Params.npower_iter;           % Number of power iterations
 z0 = randn(Params.r,1); z0 = z0/norm(z0,'fro');    % Initial guess

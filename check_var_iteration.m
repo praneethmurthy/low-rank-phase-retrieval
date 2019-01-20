@@ -11,7 +11,7 @@ Params.Tmont = 1;
 Params.n  =  200;   % Number of rows of the low rank matrix
 Params.q  =  100;   % Number of columns of the matrix for LRPR
 Params.r  =  1;     % Rank
-Params.m = 100;     % Number of measurements
+Params.m = 10;     % Number of measurements
 
 Params.tnew = 5;    % Total number of main loops of new LRPR
 Params.told = 5;    % Total number of main loops of Old LRPR

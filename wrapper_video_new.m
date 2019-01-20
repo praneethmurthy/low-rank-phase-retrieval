@@ -2,8 +2,8 @@ clc;
 clear;
 close all;
 
-%ob = VideoReader('mouse.mp4');
-ob = VideoReader('videos/sara.mp4');
+ob = VideoReader('Mouse.mp4');
+%ob = VideoReader('videos/sara.mp4');
 vidFrames = read(ob);
 %numFrames = get(ob, 'numberOfFrames');
 numFrames  =size(vidFrames,4);
@@ -12,7 +12,7 @@ for i = 1: numFrames
     temp = vidFrames(:,:,:,i);
     temp = rgb2gray(temp);
     temp = double(temp);
-    temp = imresize(temp,0.3);
+    temp = imresize(temp,0.15);
     p=size(temp,1);
     d=size(temp,2);
     I(:,i)=reshape(temp,[p*d,1]);
@@ -29,7 +29,7 @@ numFrames = q;
 
 alpha_y =   3;
 
-itr_num_pow_mth    =  5  ;
+itr_num_pow_mth    =  50;
 
 Params.itr_num_pow_mth = itr_num_pow_mth;
 Params.n_1 = n_1;
@@ -44,7 +44,7 @@ Params.q  =  q;   % Number of columns of the matrix for LRPR
 Params.r  =  25;     % Rank
 Params.m       =   n_1*n_2*L;     % Number of measurements
 
-Params.tnew = 4;    % Total number of main loops of new LRPR
+Params.tnew = 30;    % Total number of main loops of new LRPR
 Params.told = 5;    % Total number of main loops of Old LRPR
 
 Params.m_b = Params.m;          %Number of measuremnets for coefficient estimate
@@ -58,8 +58,8 @@ Paramsrwf.n  =  Params.n;% size of columns of coefficient matrix or x_k
 Paramsrwf.r  =  Params.r;% size of columns of coefficient matrix or b_k
 Paramsrwf.npower_iter = 100;% Number of loops for initialization of TWF with power method
 Paramsrwf.mu          = 0.2;% Parameter for gradient
-Params.Tb_LRPRnew    = unique(ceil(linspace(15, 25, Params.tnew)));% Number of loops for b_k with simple PR
-%Params.Tb_LRPRnew    = 3 * ones(1, Params.tnew);
+%Params.Tb_LRPRnew    = unique(ceil(linspace(15, 25, Params.tnew)));% Number of loops for b_k with simple PR
+Params.Tb_LRPRnew    = 60 * ones(1, Params.tnew);
 % Paramsrwf.Tb_LRPRnew    = 85;% Number of loops for b_k with simple PR
 Paramsrwf.TRWF           = 85;% Number of loops for b_k with simple PR
 Paramsrwf.cplx_flag   = 1;
@@ -68,50 +68,52 @@ Paramsrwf.cplx_flag   = 1;
 Den_X      =   norm(X,'fro');
 frm_count  =   0;
 XX         =   reshape(X,n_1,n_2,numFrames);
+Xmat = XX;
+TmpMask    =    zeros(n_1*n_2,q,L);
 
-Masks2     =   zeros(n_1,n_2,L,Params.q);
-
-for   a    =   1  :   Params.q
-    Masks2(:,:,:,a) = reshape(randsrc(n_1*n_2, L, [1i -1i 1 -1]), n_1, n_2, L);
+for nl = 1 : L
+    TmpMask(:,:,nl) 	=   randsrc(n_1*n_2, q, [1,-1,1i,-1i]);
+    %TmpMask(:,:,nl) 	=   randn(n_1*n_2, q);
 end
 
-Y            =   zeros(n_1,n_2,L,q);
+%  Defining functions
+Masks   =   reshape(TmpMask, n_1,n_2,L,q);
 
-for    a     =  1  :  Params.q
-    frame     =    XX(:,:,a);
-    frm_count =   frm_count + 1;
-    %fprintf('Frame # %d ...\n', frm_count);
+Afull 	 =	@(I) fft2(Masks.*reshape(repmat(I,[1,L]), n_1, n_2, L, q));
+Afull_t  =	@(E) sum(sum( conj(Masks) .* ifft2(E), 3) , 4)* n_1 * n_2; %* size(E,3);
+Afull_tk =	@(S) sum( conj(Masks) .* ifft2(S), 3)*n_1*n_2;% * size(E,1) * size(E,2) * size(E,3);
 
-    Masks     =   Masks2(:,:,:,a);
-    A  = @(I)  fft2(conj(Masks) .* reshape(repmat(I,[1 Params.L]), size(I,1), size(I,2), Params.L));
-    At = @(W) sum(Masks .* ifft2(W), 3) * size(W,1) * size(W,2);
-    
-    Y(:,:,:,a)           =   abs(A(frame)).^2;
-end
+% Afull 	 =	@(I) (Masks.*reshape(repmat(I,[1,L]), n_1, n_2, L, q));
+% Afull_t  =	@(E) sum(sum( conj(Masks) .* (E), 3) , 4)* n_1 * n_2; %* size(E,3);
+% Afull_tk =	@(S) sum( conj(Masks) .* (S), 3)*n_1*n_2;% * size(E,1) * size(E,2) * size(E,3);
+
+%/////////////////////////////////////////////////
+% Generating measurements
+
+Y       =   abs(Afull(Xmat)).^2;
 
 fprintf('data generation complete\n');
 
-%  Defining functions
-Masks1    =  Masks2;
-Afull 	 =	@(I) fft2(conj(Masks1).*reshape(repmat(I,[1,L]), n_1, n_2, L, q));
-Afull_t  =	@(E) sum(sum( Masks1 .* ifft2(E), 3) , 4)* n_1 * n_2; %* size(E,3);
-Afull_tk =	@(S) sum( Masks1 .* ifft2(S), 3)*n_1*n_2;% * size(E,1) * size(E,2) * size(E,3);
+% Masks1    =  Masks2;
+% Afull 	 =	@(I) fft2(conj(Masks1).*reshape(repmat(I,[1,L]), n_1, n_2, L, q));
+% Afull_t  =	@(E) sum(sum( Masks1 .* ifft2(E), 3) , 4)* n_1 * n_2; %* size(E,3);
+% Afull_tk =	@(S) sum( Masks1 .* ifft2(S), 3)*n_1*n_2;% * size(E,1) * size(E,2) * size(E,3);
 
 [B_hat, U_hat, Xhat, Uo_track] ...
-    = LRPR_prac_video(Params, Paramsrwf, Y, Afull, Afull_t, Afull_tk, Masks2, X);
+    = LRPR_prac_video_new(Params, Paramsrwf, Y, Afull, Afull_t, Afull_tk, Masks, X);
 %[Altmintime,Bhat, Uhat,Xhat] = alt_min_init(Y, Params, Afull, Afull_t, Afull_tk);
-vdo_out_obj =   VideoWriter('random');
+vdo_out_obj =   VideoWriter('out_30iter_rwf60_bef');
 open(vdo_out_obj);
 Tmp_Err_X2   =   zeros(q, 1);
 for   t    =  1  :   q
-    tmpframe = reshape(Xhat(:, :, t), Params.n_1, Params.n_2);
-    writeVideo(vdo_out_obj, uint8(abs(Xhat(:,:,t))));
+    tmpframe = reshape(Xhat(:, t), Params.n_1, Params.n_2);
+    writeVideo(vdo_out_obj, uint8(abs(tmpframe)));
 %     xa_hat        =   DD(:,t);
 %     xa            =   X(:,t);
 %     Tmp_Err_X2(t)  =   norm(xa - exp(-1i*angle(trace(xa'*xa_hat))) * xa_hat, 'fro');
 end
-Nom_Err_X_twf	    =   sum(Tmp_Err_X2);
-ERRTWFP             =  Nom_Err_X_twf / Den_X;
+%Nom_Err_X_twf	    =   sum(Tmp_Err_X2);
+%ERRTWFP             =  Nom_Err_X_twf / Den_X;
 close(vdo_out_obj);
 
 % D       =        reshape(Xhat,n,q);
