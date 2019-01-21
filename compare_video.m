@@ -44,7 +44,7 @@ Params.q  =  q;   % Number of columns of the matrix for LRPR
 Params.r  =  25;     % Rank
 Params.m       =   n_1*n_2*L;     % Number of measurements
 
-Params.tnew = 10;    % Total number of main loops of new LRPR
+Params.tnew = 30;    % Total number of main loops of new LRPR
 Params.told = 5;    % Total number of main loops of Old LRPR
 
 Params.m_b = Params.m;          %Number of measuremnets for coefficient estimate
@@ -103,10 +103,13 @@ fprintf('data generation complete\n');
 %     = LRPR_prac_video_new(Params, Paramsrwf, Y, Afull, Afull_t, Afull_tk, Masks, X);
 %[Altmintime,Bhat, Uhat,Xhat] = alt_min_init(Y, Params, Afull, Afull_t, Afull_tk);
 
-[B_hat, U_hat, Xhat, Uo_track] ...
-    = LRPR_video_model_corr(Params, Paramsrwf, Y, Afull, Afull_t, Afull_tk, Masks, X);
+[B_hat, U_hat, Xhat, Uo_track, err_mc] ...
+    = LRPR_prac_video_new(Params, Paramsrwf, Y, Afull, Afull_t, Afull_tk, Masks, X);
 
-vdo_out_obj =   VideoWriter('out_30iter_rwf60_bef_mc');
+figure
+plot(log10(err_mc));
+
+vdo_out_obj =   VideoWriter('tmp1');
 open(vdo_out_obj);
 Tmp_Err_X2   =   zeros(q, 1);
 for   t    =  1  :   q
@@ -120,61 +123,4 @@ end
 %ERRTWFP             =  Nom_Err_X_twf / Den_X;
 close(vdo_out_obj);
 
-% D       =        reshape(Xhat,n,q);
-% 
-% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% for na = 1 : Params.q
-%     xa_hat      =   D(:,na);
-%     xa          =   X(:,na);
-%     %                 %  Tmp_Err_X(na)   =   min(norm(xa-xa_hat)^2, norm(xa+xa_hat)^2);
-%     Tmp_Err_X1(na) 	=   norm(xa - exp(-1i*angle(trace(xa'*xa_hat))) * xa_hat, 'fro');
-% end
-% % Rel_Err(:,t)=  Tmp_Err_X;
-% % Err      = sum(Tmp_Err_X1);
-% % ERRinit     =   Err / Den_X;
-% % fprintf('Our initialization Error is:\t%2.2e\n',ERRinit);
-% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% 
-% 
-% % Z      =    Xhat;
-% % tic;
-% % for t = 1: Paramstwf.T
-% %     fprintf('Iteration # %d of main loop...\n', t);
-% %     for   aa   =   1  :  q
-% %         Masks  =   Masks2(:,:,:,aa);
-% %         A  = @(I)  fft2(conj(Masks) .* reshape(repmat(I,[1 Paramstwf.L]), size(I,1), size(I,2), Paramstwf.L));
-% %         At = @(W) sum(Masks .* ifft2(W), 3) * size(W,1) * size(W,2);
-% %         % xhat(:,:,aa) = TWFgrad(Z(:,:,aa),Y(:,:,:,aa), Paramstwf, A, At) ;
-% %         
-% %         grad = compute_grad2(Z(:,:,aa), Y(:,:,:,aa), Paramstwf, A, At);
-% %         Z(:,:,aa) =  Z(:,:,aa)- Paramstwf.mu * grad;
-% %     end
-% %     Xhat          =   reshape(Z,n,q);
-% %     %     [UtwfE,SE,VE] =   svds(Xhat,r);
-% %     %     DD           =   UtwfE*SE*VE';
-% %     [UE,~,~,~] =   BlockIter(Xhat,MaxIter,r);
-% %     %[UtwfE,SE,VE] =   svds(Xhat,r);
-% %     %DD           =   UtwfE*SE*VE';
-% %     DD           =   UE*(UE'*Xhat);
-% %     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% %     % % %     for na = 1 : q
-% %     % % %         xa_hat      =   DD(:,na);
-% %     % % %         xa          =   X(:,na);
-% %     % % %         %                 %  Tmp_Err_X(na)   =   min(norm(xa-xa_hat)^2, norm(xa+xa_hat)^2);
-% %     % % %         Tmp_Err_X(na) 	=   norm(xa - exp(-1i*angle(trace(xa'*xa_hat))) * xa_hat, 'fro');
-% %     % % %     end
-% %     % % %     % Rel_Err(:,t)=  Tmp_Err_X;
-% %     % % %     Rel_Err      = sum(Tmp_Err_X);
-% %     % % %     ERR(:,t)      =   Rel_Err / Den_X;
-% %     %%%   fprintf('TWF Projection Error is:\t%2.2e\n',ERR(:,t));
-% %     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% %     
-% %     Z             =   reshape(DD,n_1,n_2,q);
-% %     
-% % end
-% %TimeTWFLoop   =   toc;
-% 
-% 
-% 
-% 
-% 
+save('data/mouse_lrprnew_mc_2n_i50_o30.mat', 'X', 'Xhat', 'err_mc')

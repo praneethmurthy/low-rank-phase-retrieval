@@ -1,7 +1,6 @@
-function [B_hat, Uo, Xhat3, Uo_track, err_iter] = ...
-    LRPR_prac_video_new(Params, Paramsrwf, Y, Afull, Afull_t, Afull_tk, Masks2, X)
+function [B_hat, Uo, Xhat_MC, Uo_track] = ...
+    LRPR_video_model_corr(Params, Paramsrwf, Y, Afull, Afull_t, Afull_tk, Masks2, X)
 Ysqrt = sqrt(Y);
-err_iter = zeros(Params.tnew, 1);
 %%contains some changes to consider the CDP setting. Check if it can be
 %%made general to be able to handle simulated data too
 %X_hat = zeros(100);
@@ -30,7 +29,7 @@ for  o = 1 :Params.tnew % Main loop
         U_tmp   =  zeros(Params.n_1,Params.n_2,Params.r);
         
         for t = 1 : Params.itr_num_pow_mth
-            fprintf('power method iteration %d\n', t);
+            %fprintf('power method iteration %d\n', t);
             for nr  =   1 : Params.r
                 U_tmp(:,:,nr) = Afull_t( Ytrk.* Afull(repmat(Uupdt(:,:,nr), [1,1,Params.q])));
             end
@@ -85,9 +84,9 @@ for  o = 1 :Params.tnew % Main loop
             Tmp_Err_X2(ct)  =   norm(xa - exp(-1i*angle(trace(xa'*xa_hat))) * xa_hat, 'fro');
     end
     Nom_Err_X_twf	    =   sum(Tmp_Err_X2);
-    err_iter(o)             =  Nom_Err_X_twf / Den_X;
+    err_iter(o)             =  Nom_Err_X_twf / Den_X
     
-%     [Qb,~] = BlockIter(B_hat', 100, Params.r);
+    %     [Qb,~] = BlockIter(B_hat', 100, Params.r);
     [Qb,~] = qr(B_hat', 0);% 100, Params.r);
     Bo = Qb(:, 1:Params.r)';
     
@@ -106,7 +105,7 @@ for  o = 1 :Params.tnew % Main loop
         ERRinit     =   Err / Den_X;
         fprintf('Our initialization Error is:\t%2.2e\n',ERRinit);
     end
-
+    
     
     K1       =   Chat .* Ysqrt; %sqrt;
     Zvec     =   reshape(K1,Params.n_1*Params.n_2*Params.L*Params.q,1);
@@ -118,10 +117,39 @@ for  o = 1 :Params.tnew % Main loop
     [Qu,~] = qr(U_hat, 0);
     Uo  =  Qu(:, 1:Params.r);
     Uo_track{o} = Uo;
-    
-    
-    
 end
+
+%%%model correction step to improve residual error
+fprintf('model correction step\n')
+Xhat_MC = zeros(Params.n_1 * Params.n_2, Params.q);
+for ni = 1 : Params.q
+    Masks  =   Masks2(:,:,:,ni);
+    xk = Xhat3(:, ni);
+    ytmp = sqrt(reshape(Y(:, :, :, ni), [], 1));
+    A_pr  = @(I)  reshape(fft2(Masks .* ...
+        reshape(repmat(I, Params.L, 1), Params.n_1, Params.n_2, Params.L)), [],1);
+    At_pr = @(W) 1 / (Params.n_1 * Params.n_2) * reshape(sum(conj(Masks) .* ...
+        ifft2(reshape(W, Params.n_1, Params.n_2, Params.L)), 3), [], 1);
+    Paramsrwf.Tb_LRPRnew = 30;
+    Paramsrwf.r = Params.n_1 * Params.n_2;
+    [what_mc] = RWFsimple(ytmp - A_pr(xk), Paramsrwf, A_pr, At_pr);
+    Xhat_MC(:, ni) = - what_mc + xk;
+    %x_k =  Uo *  B_hat(:,ni);
+    %Chat3 = exp(1i * angle(A_pr(Xhat_MC(:,ni))));
+    %Xhat3(:, ni) = x_k;
+    %Chat(:, :, :, ni) = reshape(Chat3, Params.n_1, Params.n_2, Params.L, 1);
+end
+
+Den_X      =   norm(X,'fro');
+Tmp_Err_X2   =   zeros(Params.q, 1);
+for   ct    =  1  :   Params.q
+    xa_hat        =   Xhat_MC(:,ct);
+    xa            =   X(:,ct);
+    Tmp_Err_X2(ct)  =   norm(xa - exp(-1i*angle(trace(xa'*xa_hat))) * xa_hat, 'fro');
+end
+Nom_Err_X_twf	    =   sum(Tmp_Err_X2);
+err_iter            =  Nom_Err_X_twf / Den_X
+
     function i_out = mult_H2(i_in)
         I_mat    =   reshape(i_in, Params.n_1*Params.n_2, Params.r);
         % i_out    =   zeros(Params.q*Params.m, 1);

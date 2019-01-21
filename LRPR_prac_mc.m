@@ -1,7 +1,7 @@
 function [B_hat, Uo, Xhat3, Uo_track, err_iter] = ...
-    LRPR_prac_video_new(Params, Paramsrwf, Y, Afull, Afull_t, Afull_tk, Masks2, X)
+    LRPR_prac_mc(Params, Paramsrwf, Y, Afull, Afull_t, Afull_tk, Masks2, X)
 Ysqrt = sqrt(Y);
-err_iter = zeros(Params.tnew, 1);
+err_iter = zeros(Params.tnew+1, 1);
 %%contains some changes to consider the CDP setting. Check if it can be
 %%made general to be able to handle simulated data too
 %X_hat = zeros(100);
@@ -118,10 +118,38 @@ for  o = 1 :Params.tnew % Main loop
     [Qu,~] = qr(U_hat, 0);
     Uo  =  Qu(:, 1:Params.r);
     Uo_track{o} = Uo;
-    
-    
-    
 end
+
+%%%model correction step to improve residual error
+fprintf('model correction step\n')
+Xhat_MC = zeros(Params.n_1 * Params.n_2, Params.q);
+for ni = 1 : Params.q
+    Masks  =   Masks2(:,:,:,ni);
+    xk = Xhat3(:, ni);
+    ytmp = sqrt(reshape(Y(:, :, :, ni), [], 1));
+    A_pr  = @(I)  reshape(fft2(Masks .* ...
+        reshape(repmat(I, Params.L, 1), Params.n_1, Params.n_2, Params.L)), [],1);
+    At_pr = @(W) Params.n_1 * Params.n_2 * reshape(sum(conj(Masks) .* ...
+        ifft2(reshape(W, Params.n_1, Params.n_2, Params.L)), 3), [], 1);
+    Paramsrwf.Tb_LRPRnew = 5;
+    Paramsrwf.r = Params.n_1 * Params.n_2;
+    [what_mc] = RWFsimple(sqrt(ytmp) - A_pr(xk), Paramsrwf, A_pr, At_pr);
+    Xhat_MC(:, ni) = what_mc + xk;
+    %x_k =  Uo *  B_hat(:,ni);
+    %Chat3 = exp(1i * angle(A_pr(Xhat_MC(:,ni))));
+    %Xhat3(:, ni) = x_k;
+    %Chat(:, :, :, ni) = reshape(Chat3, Params.n_1, Params.n_2, Params.L, 1);
+end
+
+Tmp_Err_X2   =   zeros(Params.q, 1);
+for   ct    =  1  :   Params.q
+    xa_hat        =   Xhat_MC(:,ct);
+    xa            =   X(:,ct);
+    Tmp_Err_X2(ct)  =   norm(xa - exp(-1i*angle(trace(xa'*xa_hat))) * xa_hat, 'fro');
+end
+Nom_Err_X_twf	    =   sum(Tmp_Err_X2);
+err_iter(Params.tnew+1)             =  Nom_Err_X_twf / Den_X;
+
     function i_out = mult_H2(i_in)
         I_mat    =   reshape(i_in, Params.n_1*Params.n_2, Params.r);
         % i_out    =   zeros(Params.q*Params.m, 1);
