@@ -1,18 +1,15 @@
-function [z] = RWF_2d(y1, Params, A, At)
-
-%%simple modifications to handle 2D data!
-
+function [z] = RWFsimple_mc(y1, Params, A, At, z0)
 %% Initialization
-npower_iter = Params.npower_iter;           % Number of power iterations
-z0 = randn(Params.n_1, Params.n_2); z0 = z0/norm(z0,'fro');    % Initial guess
-
+%npower_iter = Params.npower_iter;           % Number of power iterations
+%z0 = randn(Params.r,1); 
+z0 = z0/norm(z0,'fro');    % Initial guess
 normest = (sqrt(pi/2)*(1-Params.cplx_flag)+sqrt(4/pi)*Params.cplx_flag)*sum(y1(:))/numel(y1(:));
 % Estimate norm to scale eigenvector
 
-ytr=y1.* (abs(y1) > 1 * normest );% truncated version
-for tt = 1: npower_iter
-    z0 = At( ytr.* (A(z0)) ); z0 = z0/norm(z0,'fro');
-end
+%ytr=y1.* (abs(y1) > 1 * normest );% truncated version
+% for tt = 1: npower_iter
+%     z0 = At( ytr.* (A(z0)) ); z0 = z0/norm(z0,'fro');
+% end
 z0 = normest * z0; % Apply scaling
 
 %% reshaped Wirtinger flow

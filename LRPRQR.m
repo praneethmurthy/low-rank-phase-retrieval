@@ -1,19 +1,40 @@
-function [B_hat, Uo, X_hat, Uo_track] = LRPRQR(Params, Paramsrwf, Y, Ysqrt, A)
-
+function [B_hat, Uo, X_hat, Uo_track, X_track, time_iter] = LRPRQR(Params, Paramsrwf, Y, Ysqrt, A)
+time_iter = zeros(Params.tnew, 1);
+tic;
 for  o = 1 :Params.tnew % Main loop
     %%%%%%%
     % Initializing the subspace
     %%%%%%%
     if o == 1
+        %%computing matrix for spectral init
+        %[~,Y_init,Ai] = Generate_Mes(X,Params,Params.m_init);
         Yu      =   zeros(Params.n, Params.n);
+        normest = 9/(Params.m * Params.q) * sum(Y(:));
         for nh = 1 : Params.q
-            normest = sqrt((9/Params.m) * Y(:,nh)' * Y(:, nh));
+            %normest = sqrt((13/Params.m_init) * Y(:,nh)' * Y(:, nh));
             Ytr = Y(:,nh) .* (abs(Y(:, nh)) > normest);
             Yu  =   Yu + A(:,:,nh) * diag(Ytr) * A(:,:,nh)';
         end
-        Yu      =   Yu / Params.q / Params.m;
+        Yu      =   Yu / Params.q / Params.m_init;
+
+        if(Params.rank_est_flag == 1) %%need to estimate rank
+            %%checking rank estimation
+            [~,sig_init,~] =   svd(Yu);
+            sig_init = diag(sig_init);
+            tmp1 = 1.* (sig_init(1:end-1) - min(sig_init) >= 1.3 * min(Params.sig_star)^2/Params.q);
+            if (all(tmp1 == 0))
+                est_rank = 1;
+            else
+                est_rank = find(tmp1 == 1, 1, 'last');
+            end
+            Params.r = est_rank;
+            Paramsrwf.r  =  Params.r;
+            fprintf('estimated rank is %d\n', Params.r);
+        end
+        
         [P,~,~] =   svds(Yu, Params.r);
-        Uo = P;
+        U_hat = P;
+        Uo = U_hat;
     end
     Uo_track{o} = Uo;
     
@@ -36,6 +57,8 @@ for  o = 1 :Params.tnew % Main loop
         Chat(:,ni) = (A(:,:,ni)'* x_k >= 0) - (A(:,:,ni)'* x_k < 0);
         X_hat(:, ni) = x_k;
     end
+    time_iter(o) = toc;
+    X_track{o} = Uo * B_hat;
     [Qb,~]  =  qr(B_hat');
     Bo   =   Qb(:,1:Params.r)';
     

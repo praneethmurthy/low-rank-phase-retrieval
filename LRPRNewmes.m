@@ -1,18 +1,37 @@
 function [B_hat, Uo, X_hat, Uo_track] = LRPRNewmes(Params, Paramsrwf, Y, Ysqrt, A, X)
 
-[~,Y_init,Ai] = Generate_Mes(X,Params,Params.m_init);
+
 for  o = 1 :Params.tnew % Main loop
     %%%%%%%
     % Initializing the subspace
     %%%%%%%
     if o == 1
+        %%computing matrix for spectral init
+        [~,Y_init,Ai] = Generate_Mes(X,Params,Params.m_init);
         Yu      =   zeros(Params.n, Params.n);
+        normest = 9/(Params.m_init * Params.q) * sum(Y_init(:));
         for nh = 1 : Params.q
-            normest = sqrt((9/Params.m) * Y_init(:,nh)' * Y_init(:, nh));
+            %normest = sqrt((13/Params.m_init) * Y(:,nh)' * Y(:, nh));
             Ytr = Y_init(:,nh) .* (abs(Y_init(:, nh)) > normest);
             Yu  =   Yu + Ai(:,:,nh) * diag(Ytr) * Ai(:,:,nh)';
         end
-        Yu      =   Yu / Params.q / Params.m;
+        Yu      =   Yu / Params.q / Params.m_init;
+
+        if(Params.rank_est_flag == 1) %%need to estimate rank
+            %%checking rank estimation
+            [~,sig_init,~] =   svd(Yu);
+            sig_init = diag(sig_init);
+            tmp1 = 1.* (sig_init(1:end-1) - min(sig_init) >= 1.3 * min(Params.sig_star)^2/Params.q);
+            if (all(tmp1 == 0))
+                est_rank = 1;
+            else
+                est_rank = find(tmp1 == 1, 1, 'last');
+            end
+            Params.r = est_rank;
+            Paramsrwf.r  =  Params.r;
+            %fprintf('estimated rank is %d\n', Params.r);
+        end
+        
         [P,~,~] =   svds(Yu, Params.r);
         U_hat = P;
         Uo = U_hat;
@@ -47,7 +66,7 @@ for  o = 1 :Params.tnew % Main loop
         TempVec     =   Chat(:, nt) .* Ysqrt_u(:,nt);
         Zvec(strt_idx:end_idx, 1)   =   TempVec;
     end
-    Uvec    =   cgls_new(@mult_H, @mult_Ht , Zvec, 0, 1e-3,5);
+    Uvec    =   cgls_new(@mult_H, @mult_Ht , Zvec, 0, 1e-16, 30);
     U_hat    =   reshape(Uvec, Params.n, Params.r);
     [Qu,~]  =  qr(U_hat);
     Uo  =  Qu(:, 1:Params.r);

@@ -1,17 +1,33 @@
 %%  Low Rank Phase Retrieval using Alternating Minimization
-function [Xhat, Uhat, U_track] = LRPR_AltMin(Y, A, Params)
+function [Xhat, Uhat, U_track, X_track, time_iter] = LRPR_AltMin(Y, A, Params)
 
-
+time_iter = zeros(Params.told, 1);
 Xhat    =   zeros(Params.n, Params.q);
+
+%tic;
 %%   Initialization
 Yu  =   zeros(Params.n, Params.n);
+normest = 9/(Params.m * Params.q) * sum(Y(:));
 for k = 1 : Params.q
-    normest = sqrt((9/Params.m) * Y(:,k)' * Y(:, k));
+    %normest = sqrt((9/Params.m) * Y(:,k)' * Y(:, k));
     Ytr = Y(:,k) .* (abs(Y(:, k)) > normest);
     Yu 	=   Yu + A(:,:,k) * diag(Ytr) * A(:,:,k)';
 end
 
 Yu          =   Yu / Params.m / Params.q;
+if(Params.rank_est_flag == 1) %%need to estimate rank
+    %%checking rank estimation
+    [~,sig_init,~] =   svd(Yu);
+    sig_init = diag(sig_init);
+    tmp1 = 1.* (sig_init(1:end-1) - min(sig_init) >= 1.3 * min(Params.sig_star)^2/Params.q);
+    if (all(tmp1 == 0))
+        est_rank = 1;
+    else
+        est_rank = find(tmp1 == 1, 1, 'last');
+    end
+    Params.r = est_rank;
+    fprintf('estimated rank is %d\n', Params.r);
+end
 [Ui, ~, ~]  =   svd(Yu);
 Uhat        =   Ui(:, 1:Params.r);
 Bhat        =   zeros(Params.r, Params.q);
@@ -30,11 +46,15 @@ for a = 1 : Params.q
     Chat(:,a)   =   exp(1i*angle(A(:,:,a)' * Uhat * Bhat(:,a)));
 end
 
+%time_iter(1) = toc;
+
 %%  Main Loop
 Ysqrt   =   sqrt(Y);
 Zvec    =   zeros(Params.m*Params.q, 1);
+tic;
 for t = 1 : Params.told
     U_track{t} = Uhat;
+    X_track{t} = Uhat * Bhat;
     %tic;
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     %       Updating Uhat
@@ -63,6 +83,7 @@ for t = 1 : Params.told
         Xhat(:,a)   =   Uhat * Bhat(:, a);
         
     end
+    time_iter(t) = toc;
 end
 
 %%%% helper functions

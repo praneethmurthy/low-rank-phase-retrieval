@@ -24,7 +24,7 @@ r       =   25;
 q       =  numFrames ;
 MaxIter  =  50;
 X      =    I(:, 1 : q);
-L       =   2;
+L       =   5;
 numFrames = q;
 
 alpha_y =   3;
@@ -58,10 +58,10 @@ Paramsrwf.n  =  Params.n;% size of columns of coefficient matrix or x_k
 Paramsrwf.r  =  Params.r;% size of columns of coefficient matrix or b_k
 Paramsrwf.npower_iter = 100;% Number of loops for initialization of TWF with power method
 Paramsrwf.mu          = 0.2;% Parameter for gradient
-%Params.Tb_LRPRnew    = unique(ceil(linspace(15, 25, Params.tnew)));% Number of loops for b_k with simple PR
-Params.Tb_LRPRnew    = 60 * ones(1, Params.tnew);
+Params.Tb_LRPRnew    = unique(ceil(linspace(7, 40, Params.tnew)));% Number of loops for b_k with simple PR
+%Params.Tb_LRPRnew    = 60 * ones(1, Params.tnew);
 % Paramsrwf.Tb_LRPRnew    = 85;% Number of loops for b_k with simple PR
-Paramsrwf.TRWF           = 85;% Number of loops for b_k with simple PR
+Paramsrwf.TRWF           = 300;% Number of loops for b_k with simple PR
 Paramsrwf.cplx_flag   = 1;
 
 
@@ -83,6 +83,11 @@ Afull 	 =	@(I) fft2(Masks.*reshape(repmat(I,[1,L]), n_1, n_2, L, q));
 Afull_t  =	@(E) sum(sum( conj(Masks) .* ifft2(E), 3) , 4)* n_1 * n_2; %* size(E,3);
 Afull_tk =	@(S) sum( conj(Masks) .* ifft2(S), 3)*n_1*n_2;% * size(E,1) * size(E,2) * size(E,3);
 
+
+A_U = @(I, Uo) reshape(Afull(reshape(Uo * I, Params.n_1, Params.n_2, Params.q)), [], Params.q);
+At_U = @(W, Uo) Uo' * ...
+    reshape(Afull_tk(reshape(W, Params.n_1, Params.n_2, Params.L, Params.q)), [], Params.q) ;
+
 % Afull 	 =	@(I) (Masks.*reshape(repmat(I,[1,L]), n_1, n_2, L, q));
 % Afull_t  =	@(E) sum(sum( conj(Masks) .* (E), 3) , 4)* n_1 * n_2; %* size(E,3);
 % Afull_tk =	@(S) sum( conj(Masks) .* (S), 3)*n_1*n_2;% * size(E,1) * size(E,2) * size(E,3);
@@ -99,21 +104,59 @@ fprintf('data generation complete\n');
 % Afull_t  =	@(E) sum(sum( Masks1 .* ifft2(E), 3) , 4)* n_1 * n_2; %* size(E,3);
 % Afull_tk =	@(S) sum( Masks1 .* ifft2(S), 3)*n_1*n_2;% * size(E,1) * size(E,2) * size(E,3);
 
-% [B_hat, U_hat, Xhat, Uo_track] ...
-%     = LRPR_prac_video_new(Params, Paramsrwf, Y, Afull, Afull_t, Afull_tk, Masks, X);
-%[Altmintime,Bhat, Uhat,Xhat] = alt_min_init(Y, Params, Afull, Afull_t, Afull_tk);
+% [B_hat, U_hat, Xhat, Uo_track, err_new, time_new] ...
+%     = LRPR_prac_video_new(Params, Paramsrwf, Y, Afull, Afull_t, Afull_tk, X);
+% [Altmintime,Bhat, Uhat,Xhat] = alt_min_init(Y, Params, Afull, Afull_t, Afull_tk);
 
-[B_hat, U_hat, Xhat, Uo_track, err_mc] ...
-    = LRPR_prac_video_new(Params, Paramsrwf, Y, Afull, Afull_t, Afull_tk, Masks, X);
+% [B_hat, U_hat, Xhat, Uo_track, err_mc] ...
+%     = LRPR_video_model_corr(Params, Paramsrwf, Y, Afull, Afull_t, Afull_tk, Masks, X);
 
-figure
-plot(log10(err_mc));
+Xhat_rwf = zeros(Params.n_1 * Params.n_2, Params.q);
+err_rwf = zeros(Paramsrwf.TRWF+1, Params.q);
+time_rwf = zeros(Paramsrwf.TRWF+1, Params.q);
+for ni = 1 : Params.q
+    Masks2  =   Masks(:,:,:,ni);
+    ytmp = sqrt(reshape(Y(:, :, :, ni), [], 1));
+    A_pr  = @(I)  reshape(fft2(Masks2 .* ...
+        reshape(repmat(I, Params.L, 1), Params.n_1, Params.n_2, Params.L)), [],1);
+    At_pr = @(W) 1 / (Params.n_1 * Params.n_2) * reshape(sum(conj(Masks2) .* ...
+        ifft2(reshape(W, Params.n_1, Params.n_2, Params.L)), 3), [], 1);
+    Paramsrwf.Tb_LRPRnew = 100;
+    Paramsrwf.r = Params.n_1 * Params.n_2;
+    [what_mc, errtmp, timetmp] = RWFsimple2_vid(ytmp, Paramsrwf, A_pr, At_pr, X(:, ni));
+    err_rwf(:, ni) = errtmp;
+    time_rwf(:, ni) = timetmp;
+    Xhat_rwf(:, ni) = what_mc;
+    %x_k =  Uo *  B_hat(:,ni);
+    %Chat3 = exp(1i * angle(A_pr(Xhat_MC(:,ni))));
+    %Xhat3(:, ni) = x_k;
+    %Chat(:, :, :, ni) = reshape(Chat3, Params.n_1, Params.n_2, Params.L, 1);
+end
 
-vdo_out_obj =   VideoWriter('tmp1');
+Den_X      =   norm(X,'fro');
+Tmp_Err_X2   =   zeros(Params.q, 1);
+for   ct    =  1  :   Params.q
+    xa_hat        =   Xhat(:,ct);
+    xa            =   X(:,ct);
+    Tmp_Err_X2(ct)  =   norm(xa - exp(-1i*angle(trace(xa'*xa_hat))) * xa_hat, 'fro');
+end
+Nom_Err_X_twf	    =   sum(Tmp_Err_X2);
+
+err_fin_rwf = mean(err_rwf, 2);
+time_fin_rwf = mean(time_rwf, 2);
+
+% figure
+% loglog(time_fin_rwf, err_fin_rwf);
+
+% figure
+% loglog(time_new, err_new);
+
+
+vdo_out_obj =   VideoWriter('m5n_rwf_plane');
 open(vdo_out_obj);
 Tmp_Err_X2   =   zeros(q, 1);
 for   t    =  1  :   q
-    tmpframe = reshape(Xhat(:, t), Params.n_1, Params.n_2);
+    tmpframe = reshape(Xhat_rwf(:, t), Params.n_1, Params.n_2);
     writeVideo(vdo_out_obj, uint8(abs(tmpframe)));
 %     xa_hat        =   DD(:,t);
 %     xa            =   X(:,t);
@@ -123,4 +166,4 @@ end
 %ERRTWFP             =  Nom_Err_X_twf / Den_X;
 close(vdo_out_obj);
 
-save('data/mouse_lrprnew_mc_2n_i50_o30.mat', 'X', 'Xhat', 'err_mc')
+save('data/plane_rwf_5n_err_time.mat', 'Xhat_rwf', 'err_fin_rwf', 'time_fin_rwf')

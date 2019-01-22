@@ -39,7 +39,7 @@ for kk = 2 : k_max
             x_k =  Uo *  B_hat(:,ni);
             Chat(:, ni) = (Au(:,:,ni)'* x_k >= 0) - (Au(:,:,ni)'* x_k < 0);
         end
-        fprintf('subspace initialized at %d and ctr is %d\n', kk, ctr);
+        %fprintf('subspace initialized at %d and ctr is %d\n', kk, ctr);
         
     elseif((~mod(kk-1, Params.alpha)) && (kk ~= khat(end) + Params.alpha) &&(det_mode == 0)) %%not initializing
         l = l + 1;
@@ -77,12 +77,12 @@ for kk = 2 : k_max
         Uo_track{ctr} = Uo;
         t_calc = [t_calc, kk];
         ctr = ctr+1;
-        fprintf('subspace updated at %d and ctr is %d\n', kk, ctr);
+        %fprintf('subspace updated at %d and ctr is %d\n', kk, ctr);
         %X_hat = Uo * B_hat;
     end
     
     if((~mod(kk-1, Params.alpha)) &&(l >= Params.L)) %%means epsilon accurate subspace is obtained and need to check for ss change
-        fprintf('checking for change at %d\n', kk)
+        %fprintf('checking for change at %d\n', kk)
         det_mode = 1;
         Uo_track{ctr} = Uo;
         t_calc = [t_calc, kk];
@@ -92,23 +92,24 @@ for kk = 2 : k_max
     if((~mod(kk-1, Params.alpha)) && (det_mode == 1))
         [~,Y_init,Ai] = ...
             Generate_Mes_temp(X(:, kk - Params.alpha:kk), Params,Params.m_init, Params.alpha);
+        
         Yu      =   zeros(Params.n, Params.n);
         for nh = 1 : Params.alpha
-            normest = sqrt((9/Params.m) * Y_init(:,nh)' * Y_init(:, nh));
+            normest = sqrt((9/Params.m_init) * Y_init(:,nh)' * Y_init(:, nh));
             Ytr = Y_init(:,nh) .* (abs(Y_init(:, nh)) > normest);
             Yu  =   Yu + Ai(:,:,nh) * diag(Ytr) * Ai(:,:,nh)';
         end
-        Yu      =   Yu / Params.q / Params.m;
-        Y_u_det = (Yu - (Uo * (Uo' * Yu)));
+        Yu      =   Yu / Params.alpha / Params.m_init;
+        Y_u_det = Yu - 2 * (Uo * (Uo' * Yu)) + Uo * (Uo' * ((Yu * Uo) * Uo')) ;
         [~,sig_det] = svds(Y_u_det);
         sig_det = diag(sig_det);
-        fprintf('the detection criterion value at %d is %f\n',kk, max(sig_det) + min(sig_det));
-        if(max(sig_det) + min(sig_det) >= Params.thresh)
+        %fprintf('the detection criterion value at %d is %f, \t %f\n',kk, max(sig_det), min(sig_det));
+        if(max(sig_det) - min(sig_det) >= Params.thresh)
             det_mode = 0;
             l = 0;
             khat = [khat, kk];
-            fprintf('change detected at %d\n', kk);
-            fprintf('Max: %f \t Min: %f\n', max(sig_det(:)), min(sig_det(:)));
+            %fprintf('change detected at %d\n', kk);
+            %fprintf('Max: %f \t Min: %f\n', max(sig_det(:)), min(sig_det(:)));
         end
     end
 end

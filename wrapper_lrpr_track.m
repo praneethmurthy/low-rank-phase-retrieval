@@ -6,15 +6,15 @@ clc;
 
 
 tt1 = tic;
-Params.Tmont = 1;
+Params.Tmont = 30;
 
 Params.n  =  200;   % Number of rows of the low rank matrix
 Params.q  =  4000;   % Number of columns of the matrix for LRPR
 Params.r  =  2;     % Rank
-Params.m = 100;     % Number of measurements
-Params.alpha = 100;
+Params.m = 150;     % Number of measurements
+Params.alpha = 150;
 Params.L = 10;
-Params.thresh = 1e-1;
+Params.thresh = .1;
 
 Params.tnew = 10;    % Total number of main loops of new LRPR
 Params.told = 10;    % Total number of main loops of Old LRPR
@@ -48,13 +48,13 @@ Paramsrwf.cplx_flag   = 0;
 
 %err_SE_iter = zeros(Params.tnew, Params.Tmont);
 
-file_name = strcat(['Copmare_n', num2str(Params.n), 'm', num2str(Params.m), 'r', num2str(Params.r), 'q', num2str(Params.q)]);
-file_name_txt = strcat(file_name,'.txt');
-file_name_mat = strcat(file_name,'.mat');
+% file_name = strcat(['Copmare_n', num2str(Params.n), 'm', num2str(Params.m), 'r', num2str(Params.r), 'q', num2str(Params.q)]);
+% file_name_txt = strcat(file_name,'.txt');
+% file_name_mat = strcat(file_name,'.mat');
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%Generating U and B and X
-t_1 = 2102;
+t_1 = 1992;
 U0       =   orth(randn(Params.n, Params.r));
 Mse = randn(Params.n);
 Mse1 = (Mse - Mse')/2;
@@ -90,11 +90,17 @@ for t = 1 : Params.Tmont
     [Ysqrt,Y,A] = Generate_Mes(X,Params,Params.m);
     tic;
     [B_new_sample, U_new_sample, U_track_new, t_calc] = ...
-        LRPR_track_large(Params, Paramsrwf, Y, Ysqrt, A, X);
+        LRPR_track(Params, Paramsrwf, Y, Ysqrt, A, X);
     TmpTLRPmes(t) = toc;
+    
+    tic;
+    [B_new_sample_large, U_new_sample_large, U_track_new_large, t_calc_large] = ...
+        LRPR_track_large(Params, Paramsrwf, Y, Ysqrt, A, X);
+    TmpTLRPmes_large(t) = toc;
+    ERULRPRmes_large(t) = eps;
     ERULRPRmes(t) = eps;
     %ERULRPRmes(t)  =  abs(sin(subspace(U_new_sample, U)));
-    fprintf('LRPR tracking error U:\t %2.2e\t\t Time:\t %2.2e\n', ERULRPRmes(t), TmpTLRPmes(t));
+    %fprintf('LRPR tracking error U:\t %2.2e\t\t Time:\t %2.2e\n', ERULRPRmes(t), TmpTLRPmes(t));
     
     %&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
     % Error X
@@ -108,11 +114,23 @@ for t = 1 : Params.Tmont
             err_SE_iter(ii, t) = abs(sin(subspace(U_track_new{ii}, U1)));
         end
     end
+    
+    for ii = 1 : length(U_track_new_large)
+        if(t_calc_large(ii) <= t_1)
+            err_SE_iter_large(ii, t) = abs(sin(subspace(U_track_new_large{ii}, U0)));
+        else
+            err_SE_iter_large(ii, t) = abs(sin(subspace(U_track_new_large{ii}, U1)));
+        end
+    end
 end
 
 mean_Error_U_LRPR_Newmes = mean(ERULRPRmes);
 
 mean_Time_LRPR_Newmes = mean(TmpTLRPmes);
+
+mean_Error_U_LRPR_Newmes_large = mean(ERULRPRmes_large);
+
+mean_Time_LRPR_Newmes_large = mean(TmpTLRPmes_large);
 
 fprintf('**************************************\n');
 fprintf('Error U: ... \n');
@@ -123,67 +141,20 @@ fprintf('LRPR theory:\t%2.2e\n', mean_Time_LRPR_Newmes);
 toc(tt1)
 
 
-final_err_SE = mean(err_SE_iter, 2);
+final_err_SE = median(err_SE_iter, 2);
+final_err_SE_large = median(err_SE_iter_large, 2);
 % final_err_SE_med = median(err_SE_iter, 3);
 % final_err_SE_std = std(err_SE_iter, 0, 3);
 
 figure;
 plot(t_calc, log10(final_err_SE), 'rs--', 'LineWidth', 2);
+hold
+plot(t_calc_large, log10(final_err_SE_large), 'b>:', 'LineWidth', 2);
 axis tight
+l1 = legend('PST-all', 'PST-large');
+set(l1, 'Fontsize', 15);
 stry = '$$\log(SE(\hat{U}^t, U))$$';
 xlabel('time (t)', 'Fontsize', 15)
 ylabel(stry, 'Interpreter', 'latex', 'Fontsize', 15)
-title('SE = 0.8, PST-large', 'Fontsize', 15)
-% subplot(212)
-% plot(log10(final_err_SE_med(1, :)), 'rs--', 'LineWidth', 2);
-% hold
-% plot(log10(final_err_SE_med(2, :)), 'gs-.', 'LineWidth', 2);
-% plot(log10(final_err_SE_med(3, :)), 'bo-', 'LineWidth', 2);
-% axis tight
-% stry = '$$\log(SE(\hat{U}^t, U))$$';
-% xlabel('outer loop iteration (t)', 'Fontsize', 15)
-% ylabel(stry, 'Interpreter', 'latex', 'Fontsize', 15)
-% l1 = legend('LRPR-prac', 'LRPR-theory', 'LRPR-AltMin');
-% set(l1, 'Fontsize', 15)
-% t1 = title('m = 80, n=q=200, r=2');
-% set(t1, 'Fontsize', 15)
-
-% subplot(212)
-% errorbar([1:10], log10(final_err_SE_med(1, :)), final_err_SE_std(1, :),...
-%     'rs--', 'LineWidth', 2);
-% hold
-% errorbar([1:10], log10(final_err_SE_med(2, :)), final_err_SE_std(2, :),...
-%     'gs-.', 'LineWidth', 2);
-% errorbar([1:10], log10(final_err_SE_med(3, :)), final_err_SE_std(3, :),...
-%     'bo-', 'LineWidth', 2);
-% axis tight
-% stry = '$$\log(SE(\hat{U}^t, U))$$';
-% xlabel('outer loop iteration (t)', 'Fontsize', 15)
-% ylabel(stry, 'Interpreter', 'latex', 'Fontsize', 15)
-% l1 = legend('LRPR-prac', 'LRPR-theory', 'LRPR-AltMin');
-% set(l1, 'Fontsize', 15)
-% t1 = title('m = 80, n=q=200, r=2');
-% set(t1, 'Fontsize', 15)
-
-
-% figure;
-% plot(log10(final_err(1, :)), 'rs--', 'LineWidth', 2);
-% hold
-% plot(log10(final_err(3, :)), 'bo-', 'LineWidth', 2);
-% plot(log10(final_err(2, :)), 'gs-.', 'LineWidth', 2);
-% plot(log10(final_err(4, :)), 'ks-.', 'LineWidth', 2);
-% plot(log10(final_err(5, :)), 'ms-.', 'LineWidth', 2);
-% 
-% axis tight
-% stry = '$$\log(SE(\hat{U}^t, U))$$';
-% xlabel('outer loop iteration (t)', 'Fontsize', 15)
-% ylabel(stry, 'Interpreter', 'latex', 'Fontsize', 15)
-% l1 = legend('LRPR-prac', 'LRPR-AltMin', 'LRPR-theory-20', 'LRPR-theory-50', 'LRPR-theory-100');
-% set(l1, 'Fontsize', 15)
-% t1 = title('m = 20, n=q=200, r=2');
-% set(t1, 'Fontsize', 15)
-
-
-
-%data_m200 = [mean_Error_U_LRPR_Newmes, mean_Error_U_LRPR_QR, mean_Error_U_LRPR_OLD, mean_Error_U_RWF];
-%save('temp4.mat', 'data_m300')
+title('SE = 0.8', 'Fontsize', 15)
+save('data/track_se08_mc30.mat')
