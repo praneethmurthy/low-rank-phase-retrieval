@@ -6,22 +6,22 @@ clc;
 
 
 tt1 = tic;
-Params.Tmont = 30;
+Params.Tmont = 3;
 
-Params.n  =  200;   % Number of rows of the low rank matrix
-Params.q  =  4000;   % Number of columns of the matrix for LRPR
+Params.n  =  300;   % Number of rows of the low rank matrix
+Params.q  =  5100;   % Number of columns of the matrix for LRPR
 Params.r  =  2;     % Rank
-Params.m = 150;     % Number of measurements
-Params.alpha = 150;
-Params.L = 10;
-Params.thresh = .1;
+Params.m = 100;     % Numlber of measurements
+Params.alpha = 250;
+Params.L = 8;
+Params.thresh = .6;
 
 Params.tnew = 10;    % Total number of main loops of new LRPR
 Params.told = 10;    % Total number of main loops of Old LRPR
 
 Params.m_b = Params.m;          %Number of measuremnets for coefficient estimate
 Params.m_u = Params.m;           % Number of measuremnets for subspace estimate
-Params.m_init = 10 * Params.m;       % Number of measuremnets for init of subspace
+Params.m_init = Params.n;       % Number of measuremnets for init of subspace
 %m_init = 50;
 
 %Params.m  =  m_init + (m_b+m_u)*Params.tot;% Number of measurements
@@ -54,15 +54,15 @@ Paramsrwf.cplx_flag   = 0;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%Generating U and B and X
-t_1 = 1992;
+t_1 = 2992;
 U0       =   orth(randn(Params.n, Params.r));
 Mse = randn(Params.n);
 Mse1 = (Mse - Mse')/2;
-U1 = expm(0.08 * Mse1) * U0;
+U1 = expm(0.001 * Mse1) * U0;
 
 B       =   randn(Params.r, Params.q);
 X       =   [U0 * B(:, 1 : t_1), U1* B(:, t_1 + 1 : end)];
-
+Params.sig_star = svds(X, rank(X));
 normX  =  norm(X,'fro')^2; % Computing Frobenius norm of the low rank matrix
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%  Compare
@@ -141,8 +141,8 @@ fprintf('LRPR theory:\t%2.2e\n', mean_Time_LRPR_Newmes);
 toc(tt1)
 
 
-final_err_SE = median(err_SE_iter, 2);
-final_err_SE_large = median(err_SE_iter_large, 2);
+final_err_SE = mean(err_SE_iter, 2);
+final_err_SE_large = mean(err_SE_iter_large, 2);
 % final_err_SE_med = median(err_SE_iter, 3);
 % final_err_SE_std = std(err_SE_iter, 0, 3);
 
@@ -157,4 +157,4 @@ stry = '$$\log(SE(\hat{U}^t, U))$$';
 xlabel('time (t)', 'Fontsize', 15)
 ylabel(stry, 'Interpreter', 'latex', 'Fontsize', 15)
 title('SE = 0.8', 'Fontsize', 15)
-save('data/track_se08_mc30.mat')
+%save('track_se08_mc30_smallm.mat')

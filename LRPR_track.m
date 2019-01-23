@@ -99,12 +99,13 @@ for kk = 2 : k_max
         Y_u_det = Yu - 2 * (Uo * (Uo' * Yu)) + Uo * (Uo' * ((Yu * Uo) * Uo')) ;
         [~,sig_det] = svds(Y_u_det);
         sig_det = diag(sig_det);
-        %fprintf('the detection criterion value at %d is %f, \t %f\n',kk, max(sig_det), min(sig_det));
+        fprintf('the detection criterion value at %d is %f, \t %f\n',...
+            kk, max(sig_det) - min(sig_det), Params.thresh);
         if(max(sig_det) - min(sig_det) >= Params.thresh)
             det_mode = 0;
             l = 0;
             khat = [khat, kk];
-            %fprintf('change detected at %d\n', kk);
+            fprintf('change detected at %d\n', kk);
             %fprintf('Max: %f \t Min: %f\n', max(sig_det(:)), min(sig_det(:)));
         end
     end
