@@ -4,9 +4,11 @@ clear;
 clc;
 
 
-nrange = [100, 300, 600, 1000, 2000];
+%nrange = [100, 300, 600, 1000, 2000];
 %mrange = [100, 150, 200, 300, 400, 500, 600];
-Params.Tmont = 30;   % Number of Monte-Carlo repeats
+mrange = [200];
+nrange = 200;
+Params.Tmont = 1;   % Number of Monte-Carlo repeats
 Err_SE_theory = zeros(length(nrange), Params.Tmont);
 Err_SE_prac = zeros(length(nrange), Params.Tmont);
 Err_SE_AltMin = zeros(length(nrange), Params.Tmont);
@@ -15,17 +17,20 @@ Err_SE_RWF = zeros(length(nrange), Params.Tmont);
 for nn = mrange
     fprintf('m = %d', nn);
     Params.n  =  nn;   % Number of rows of the low rank matrix
-    Params.q  =  nn;   % Number of columns of the matrix for LRPR
-    Params.r  =  5;     % Rank
-    Params.m = 200;     % Number of measurements
+    Params.q  =  400;   % Number of columns of the matrix for LRPR
+    Params.r  =  4;     % Rank
+    Params.m = 80;     % Number of measurements
     
     Params.tnew = 10;    % Total number of main loops of new LRPR
     Params.told = 10;    % Total number of main loops of Old LRPR
     
     m_b = Params.m;          %Number of measuremnets for coefficient estimate
     m_u = Params.m;           % Number of measuremnets for subspace estimate
-    m_init = 150;       % Number of measuremnets for init of subspace
-    
+    Params.m_init = Params.m;  
+    m_init = Params.m;  
+    Params.rank_est_flag = 1; % Number of measuremnets for init of subspace
+    Params.m_b = Params.m;
+    Params.m_u = Params.m;
     %Params.m  =  m_init + (m_b+m_u)*Params.tot;% Number of measurements
     
     %%~PN editing m, n, r so that the variables are globally same
@@ -35,7 +40,7 @@ for nn = mrange
     Paramsrwf.r  =  Params.r;% size of columns of coefficient matrix or b_k
     Paramsrwf.npower_iter = 50;% Number of loops for initialization of TWF with power method
     Paramsrwf.mu          = 0.2;% Parameter for gradient
-    Paramsrwf.Tb_LRPRnew    = 85;% Number of loops for b_k with simple PR
+    Params.Tb_LRPRnew    = 85 * ones(1, Params.tnew);
     Paramsrwf.TRWF           = 25;% Number of loops for b_k with simple PR
     Paramsrwf.cplx_flag   = 0;
     % Paramstwf.alpha_y     = 3;
@@ -115,7 +120,7 @@ for nn = mrange
         % LRPR_Newmes
         %%%%%%%%%%%%%
         tic;
-        [B_new_sample, U_new_sample, X_new_sample] = LRPRNewmes(Params, Paramsrwf, Y, Ysqrt, A,  m_u, m_b, m_init, X);
+        [B_new_sample, U_new_sample, X_new_sample] = LRPRNewmes(Params, Paramsrwf, Y, Ysqrt, A,  X);
         TmpTLRPmes(t) = toc;
         ERULRPRmes(t)  =  abs(sin(subspace(U_new_sample, U)));
         Err_SE_theory(find(nn == nrange), t)  = ERULRPRmes(t);
@@ -142,7 +147,7 @@ for nn = mrange
             Amatrix =  A(:,:,nk)';
             A1    = @(I) Amatrix  * I;
             At    = @(Y) Amatrix' * Y;
-            [x_rwf]  = RWFsimple2(Ysqrt(:,nk), Paramsrwf, A1, At);
+            [x_rwf]  = RWFsimple2(Ysqrt(:,nk), Paramsrwf, A1, At, X(:, nk));
             X_rwf(:,nk)  =  x_rwf;
         end
         [Ur,~,~] =  svd(X_rwf);
@@ -248,4 +253,4 @@ end
 
 %data_m200 = [mean_Error_U_LRPR_Newmes, mean_Error_U_LRPR_QR, mean_Error_U_LRPR_OLD, mean_Error_U_RWF];
 %save('temp4.mat', 'data_m300')
-save('data_nvarying.mat');
+%save('data_nvarying.mat');

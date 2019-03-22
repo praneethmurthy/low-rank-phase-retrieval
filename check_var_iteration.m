@@ -6,7 +6,7 @@ clc;
 
 
 tt1 = tic;
-Params.Tmont = 30;
+Params.Tmont = 3;
 
 Params.n  =  600;   % Number of rows of the low rank matrix
 Params.q  =  1000;   % Number of columns of the matrix for LRPR

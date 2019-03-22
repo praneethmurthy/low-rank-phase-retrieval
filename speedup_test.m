@@ -25,7 +25,7 @@ for mm = mrange
     
     m_b = Params.m;          %Number of measuremnets for coefficient estimate
     m_u = Params.m;           % Number of measuremnets for subspace estimate
-    m_init = 150;       % Number of measuremnets for init of subspace
+    Params.m_init = Params.m;       % Number of measuremnets for init of subspace
     
     %Params.m  =  m_init + (m_b+m_u)*Params.tot;% Number of measurements
     
@@ -39,6 +39,7 @@ for mm = mrange
     Paramsrwf.Tb_LRPRnew    = 85;% Number of loops for b_k with simple PR
     Paramsrwf.TRWF           = 25;% Number of loops for b_k with simple PR
     Paramsrwf.cplx_flag   = 0;
+    Params.rank_est_flag=0;
     % Paramstwf.alpha_y     = 3;
     % Paramstwf.alpha_h     = 5;
     % Paramstwf.alpha_ub    = 5;
