@@ -6,10 +6,10 @@ clc;
 
 
 tt1 = tic;
-Params.Tmont = 3;
+Params.Tmont = 100;
 
 Params.n  =  300;   % Number of rows of the low rank matrix
-Params.q  =  5100;   % Number of columns of the matrix for LRPR
+Params.q  =  6100;   % Number of columns of the matrix for LRPR
 Params.r  =  2;     % Rank
 Params.m = 100;     % Numlber of measurements
 Params.alpha = 250;
@@ -58,7 +58,10 @@ t_1 = 2992;
 U0       =   orth(randn(Params.n, Params.r));
 Mse = randn(Params.n);
 Mse1 = (Mse - Mse')/2;
-U1 = expm(0.001 * Mse1) * U0;
+%U1 = expm(0.08 * Mse1) * U0;
+%U1 = expm(0.00078 * Mse1) * U0;
+U1 = expm(0.01595 * Mse1) * U0;
+%sin(subspace(U0, U1))
 
 B       =   randn(Params.r, Params.q);
 X       =   [U0 * B(:, 1 : t_1), U1* B(:, t_1 + 1 : end)];
@@ -141,20 +144,29 @@ fprintf('LRPR theory:\t%2.2e\n', mean_Time_LRPR_Newmes);
 toc(tt1)
 
 
-final_err_SE = mean(err_SE_iter, 2);
-final_err_SE_large = mean(err_SE_iter_large, 2);
+final_err_SE = median(err_SE_iter, 2);
+final_err_SE_large = median(err_SE_iter_large, 2);
 % final_err_SE_med = median(err_SE_iter, 3);
 % final_err_SE_std = std(err_SE_iter, 0, 3);
 
 figure;
 plot(t_calc, log10(final_err_SE), 'rs--', 'LineWidth', 2);
 hold
-plot(t_calc_large, log10(final_err_SE_large), 'b>:', 'LineWidth', 2);
+plot(t_calc_large, log10(final_err_SE_large(1:end-1)), 'b>:', 'LineWidth', 2);
+
+figure;
+plot(t_calc, log10(high_prob_out), 'rs--', 'LineWidth', 2);
+hold
+plot(t_calc_large, log10(high_prob_out_large(1:end-1)), 'b>:', 'LineWidth', 2);
+
 axis tight
 l1 = legend('PST-all', 'PST-large');
-set(l1, 'Fontsize', 15);
-stry = '$$\log(SE(\hat{U}^t, U))$$';
-xlabel('time (t)', 'Fontsize', 15)
-ylabel(stry, 'Interpreter', 'latex', 'Fontsize', 15)
-title('SE = 0.8', 'Fontsize', 15)
-%save('track_se08_mc30_smallm.mat')
+set(l1, 'Fontsize', 18);
+stry = '$$\log(SE(U^l_{sub, (j)}, U^*_{sub, (j)}))$$';
+strx = '$$\mathrm{time}(k)$$';
+str_title = '$$\sin \Theta(U_{sub, (0)}^*, U_{sub, (1)}^*) \approx 0.2$$';
+%xlabel('time (t)', 'Fontsize', 20)
+ylabel(strx, 'Interpreter', 'latex', 'Fontsize', 18)
+ylabel(stry, 'Interpreter', 'latex', 'Fontsize', 18)
+title(str_title, 'Interpreter', 'latex', 'Fontsize', 18)
+%zsave('data/pst_mc100_02.mat')

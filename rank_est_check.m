@@ -9,7 +9,7 @@ tt1 = tic;
 Params.Tmont = 10;
 
 Params.n  =  200;   % Number of rows of the low rank matrix
-Params.q  =  400;   % Number of columns of the matrix for LRPR
+Params.q  =  150;   % Number of columns of the matrix for LRPR
 Params.r  =  4;     % Rank
 Params.m = 80;     % Number of measurements
 
@@ -18,7 +18,7 @@ Params.told = 5;    % Total number of main loops of Old LRPR
 
 Params.m_b = Params.m;          %Number of measuremnets for coefficient estimate
 Params.m_u = Params.m;           % Number of measuremnets for subspace estimate
-Params.m_init = 300;       % Number of measuremnets for init of subspace
+Params.m_init = Params.m;       % Number of measuremnets for init of subspace
 %m_init = 50;
 
 %Params.m  =  m_init + (m_b+m_u)*Params.tot;% Number of measurements
@@ -84,7 +84,8 @@ for t = 1 : Params.Tmont
     
     %%checking rank estimation
     Yu      =   zeros(Params.n, Params.n);
-    normest = 8/(Params.m_init * Params.q) * sum(Y(:));
+    normest = 9/(Params.m_init * Params.q) * sum(Y(:));
+    %normest = 0;
         for nh = 1 : Params.q
             %normest = sqrt((13/Params.m_init) * Y(:,nh)' * Y(:, nh));
             Ytr = Y(:,nh) .* (abs(Y(:, nh)) > normest);
@@ -97,10 +98,15 @@ for t = 1 : Params.Tmont
         true_rank = Params.r;
         [~, arg_max_est] = max(eig_gaps);
         est_gap1(t) = arg_max_est;
-%         figure
+         figure
 %         subplot(211)
-%         plot(eig_gaps)
-        tmp1 = 1.* (sig_init(1:end-1) - min(sig_init) >= 1.3 * min(sig_star)^2/Params.q);
+         plot(sig_init)
+        %sig_init(true_rank) - sig_init(rank+1)
+        %.5 * -1 * log(Params.m/(Params.n * Params.q))* min(sig_star)^2/Params.q
+%         tmp1 = 1.* (sig_init(1:end-1) - sig_init(end) >= .5 * -1 * log(Params.m/(Params.n * Params.q))* min(sig_star)^2/Params.q);
+sig_init(end)
+min(sig_init)
+tmp1 = 1.* (sig_init(1:end-1) - sig_init(end) >= 2* min(sig_star)^2/Params.q);
         if (all(tmp1 == 0))
             max_min_gap_est = 1;
         else

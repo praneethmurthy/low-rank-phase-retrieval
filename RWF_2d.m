@@ -15,6 +15,10 @@ for tt = 1: npower_iter
 end
 z0 = normest * z0; % Apply scaling
 
+if (Params.proj ==1)
+    [u, ~] = svds(z0, Params.r);
+    z0 = u * (u' * z0);
+end
 %% reshaped Wirtinger flow
 %Relerrs=zeros(Params.T+1,1);
 z=z0;
@@ -26,6 +30,10 @@ while t<=Params.Tb_LRPRnew
     yz=A(z);
     %   ang   =  Params.cplx_flag*exp(1i * angle(yz)) +(1 - Params.cplx_flag) * sign(yz);
     z = z - mu* (Params.m\At(yz-y1.*yz./abs(yz)));
+    if(Params.proj ==1)
+        [u, ~] = svds(z, Params.r);
+        z = u * (u' * z);
+    end
   %  Relerrs(t+1)=norm(x - exp(-1i*angle(trace(x'*z))) * z, 'fro')/norm(x,'fro');
     t=t+1;
 end

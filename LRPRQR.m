@@ -21,7 +21,11 @@ for  o = 1 :Params.tnew % Main loop
             %%checking rank estimation
             [~,sig_init,~] =   svd(Yu);
             sig_init = diag(sig_init);
-            tmp1 = 1.* (sig_init(1:end-1) - min(sig_init) >= 1.3 * min(Params.sig_star)^2/Params.q);
+            figure;
+            plot(sig_init)
+            15 * (Params.m/(Params.n * Params.q))^.3 * min(Params.sig_star)^2/Params.q
+            tmp1 = 1.* (sig_init(1:end-1) - min(sig_init) >= 10 * (Params.m/(Params.n * Params.q))^.3 * min(Params.sig_star)^2/Params.q);
+            %tmp1 = 1.* (sig_init(1:end-1) - min(sig_init) >= 1.3 * min(Params.sig_star)^2/Params.q);
             if (all(tmp1 == 0))
                 est_rank = 1;
             else
@@ -32,12 +36,13 @@ for  o = 1 :Params.tnew % Main loop
             fprintf('estimated rank is %d\n', Params.r);
         end
         
-        [P,~,~] =   svds(Yu, Params.r);
+        %[P,~,~] =   svds(Yu, Params.r);
+        P = BlockIter(Yu, 5, Params.r);
         U_hat = P;
         Uo = U_hat;
     end
     Uo_track{o} = Uo;
-    
+     time_iter(o) = toc;
     %%%%%
     
     X_hat = zeros(Params.n, Params.q);
@@ -57,7 +62,7 @@ for  o = 1 :Params.tnew % Main loop
         Chat(:,ni) = (A(:,:,ni)'* x_k >= 0) - (A(:,:,ni)'* x_k < 0);
         X_hat(:, ni) = x_k;
     end
-    time_iter(o) = toc;
+   
     X_track{o} = Uo * B_hat;
     [Qb,~]  =  qr(B_hat');
     Bo   =   Qb(:,1:Params.r)';
@@ -75,7 +80,7 @@ for  o = 1 :Params.tnew % Main loop
         TempVec     =   Chat(:,nt) .* Ysqrt(:,nt);
         Zvec(strt_idx:end_idx, 1)   =   TempVec;
     end
-    Uvec    =   cgls_new(@mult_H, @mult_Ht , Zvec, 0, 1e-16, 30);
+    Uvec    =   cgls_new(@mult_H, @mult_Ht , Zvec, 0, 1e-3, 3);
     U_hat    =   reshape(Uvec, Params.n, Params.r);
     [Qu,~]  =  qr(U_hat);
     Uo  =  Qu(:, 1:Params.r);

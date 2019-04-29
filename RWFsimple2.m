@@ -1,5 +1,6 @@
 function [z, Relerrs, time_iter] = RWFsimple2(y1, Params, A, At, x)
 time_iter=zeros(Params.TRWF,1);
+tt_self = tic;
 %% Initialization
 npower_iter = Params.npower_iter;           % Number of power iterations
 z0 = randn(Params.n,1); z0 = z0/norm(z0,'fro');    % Initial guess
@@ -19,12 +20,12 @@ Relerrs(1) = norm(x - exp(-1i*angle(trace(x'*z))) * z, 'fro')/norm(x,'fro'); % I
 
 mu=0.8+0.4*Params.cplx_flag;% real step size 0.8/ complex step size1.2
 t=1;
-tic;
+
 while t<=Params.TRWF
     yz=A(z);
     %   ang   =  Params.cplx_flag*exp(1i * angle(yz)) +(1 - Params.cplx_flag) * sign(yz);
     z = z - mu* (Params.m\At(yz-y1.*yz./abs(yz)));
-    time_iter(t) = toc;
+    time_iter(t) = toc(tt_self);
     Relerrs(t+1)=norm(x - exp(-1i*angle(trace(x'*z))) * z, 'fro')/norm(x,'fro');
     t=t+1;
 end
