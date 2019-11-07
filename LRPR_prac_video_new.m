@@ -17,7 +17,7 @@ for  o = 1 :Params.tnew % Main loop
         %Den_X      =   norm(X,'fro');
         
         %truncating the measurements
-        Ytrk    =   zeros(Params.n_1,Params.n_2,Params.L,Params.q);
+        Ytrk    =   zeros(Params.n_1,Params.n_2,Params.L,Params.q); 
         for ni = 1 : Params.q
             Yk  =   reshape( Y(:,:,:,ni) , Params.n_1*Params.n_2*Params.L, 1);
             normest =   sum(Yk(:))/Params.m;

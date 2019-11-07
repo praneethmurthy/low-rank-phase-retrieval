@@ -25,6 +25,9 @@ data/
 figures/
 results/
 
+#ignore video results
+*.avi
+
 
 #ignore vim swap files
 *.swp

@@ -1,4 +1,4 @@
-function [ U Sigma V iter] = BlockIter( A, MaxIter, k)
+function [U, Sigma, V, iter] = BlockIter( A, MaxIter, k)
 
 [n, m] = size(A);
 V = randn(m,k);

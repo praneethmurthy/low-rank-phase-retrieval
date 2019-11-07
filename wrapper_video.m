@@ -2,7 +2,7 @@ clc;
 clear;
 close all;
 
-%ob = VideoReader('mouse.mp4');
+%ob = VideoReader('videos/Mouse.mp4');
 ob = VideoReader('videos/sara.mp4');
 vidFrames = read(ob);
 %numFrames = get(ob, 'numberOfFrames');
@@ -20,16 +20,16 @@ end
 
 n_1     =   p;
 n_2     =   d;
-r       =   25;
+r       =   20;
 q       =  numFrames ;
 MaxIter  =  50;
 X      =    I(:, 1 : q);
-L       =   3;
+L       =   5   ;
 numFrames = q;
 
 alpha_y =   3;
 
-itr_num_pow_mth    =  5  ;
+itr_num_pow_mth    =  50 ;
 
 Params.itr_num_pow_mth = itr_num_pow_mth;
 Params.n_1 = n_1;
@@ -41,11 +41,11 @@ Params.alpha_y = alpha_y;
 
 Params.n  =  n_1 * n_2;   % Number of rows of the low rank matrix
 Params.q  =  q;   % Number of columns of the matrix for LRPR
-Params.r  =  25;     % Rank
+Params.r  =  10;     % Rank
 Params.m       =   n_1*n_2*L;     % Number of measurements
 
-Params.tnew = 4;    % Total number of main loops of new LRPR
-Params.told = 5;    % Total number of main loops of Old LRPR
+Params.tnew = 10;    % Total number of main loops of new LRPR
+Params.told = 10;    % Total number of main loops of Old LRPR
 
 Params.m_b = Params.m;          %Number of measuremnets for coefficient estimate
 Params.m_u = Params.m;           % Number of measuremnets for subspace estimate
@@ -58,8 +58,8 @@ Paramsrwf.n  =  Params.n;% size of columns of coefficient matrix or x_k
 Paramsrwf.r  =  Params.r;% size of columns of coefficient matrix or b_k
 Paramsrwf.npower_iter = 100;% Number of loops for initialization of TWF with power method
 Paramsrwf.mu          = 0.2;% Parameter for gradient
-Params.Tb_LRPRnew    = unique(ceil(linspace(15, 25, Params.tnew)));% Number of loops for b_k with simple PR
-%Params.Tb_LRPRnew    = 3 * ones(1, Params.tnew);
+%Params.Tb_LRPRnew    = unique(ceil(linspace(30, 80, Params.tnew)));% Number of loops for b_k with simple PR
+Params.Tb_LRPRnew    = 60 * ones(1, Params.tnew);
 % Paramsrwf.Tb_LRPRnew    = 85;% Number of loops for b_k with simple PR
 Paramsrwf.TRWF           = 85;% Number of loops for b_k with simple PR
 Paramsrwf.cplx_flag   = 1;
@@ -98,7 +98,7 @@ Afull_t  =	@(E) sum(sum( Masks1 .* ifft2(E), 3) , 4)* n_1 * n_2; %* size(E,3);
 Afull_tk =	@(S) sum( Masks1 .* ifft2(S), 3)*n_1*n_2;% * size(E,1) * size(E,2) * size(E,3);
 
 [B_hat, U_hat, Xhat, Uo_track] ...
-    = LRPR_prac_video(Params, Paramsrwf, Y, Afull, Afull_t, Afull_tk, Masks2, X);
+    = LRPR_prac_video(Params, Paramsrwf, Y, Afull, Afull_t, Afull_tk, Masks2);
 %[Altmintime,Bhat, Uhat,Xhat] = alt_min_init(Y, Params, Afull, Afull_t, Afull_tk);
 vdo_out_obj =   VideoWriter('random');
 open(vdo_out_obj);
@@ -106,11 +106,12 @@ Tmp_Err_X2   =   zeros(q, 1);
 for   t    =  1  :   q
     tmpframe = reshape(Xhat(:, :, t), Params.n_1, Params.n_2);
     writeVideo(vdo_out_obj, uint8(abs(Xhat(:,:,t))));
-%     xa_hat        =   DD(:,t);
-%     xa            =   X(:,t);
-%     Tmp_Err_X2(t)  =   norm(xa - exp(-1i*angle(trace(xa'*xa_hat))) * xa_hat, 'fro');
+    xa_hat = reshape(abs(Xhat(:,:,t)),[],1);
+     %xa_hat        =   XX(:,t);
+     xa = reshape(X(:,t),[],1);
+     Tmp_Err_X2(t)  =   norm(xa - exp(-1i*angle(trace(xa'*xa_hat))) * xa_hat, 'fro');
 end
-Nom_Err_X_twf	    =   sum(Tmp_Err_X2);
+Nom_Err_X_twf	    =   mean(Tmp_Err_X2.^2);
 ERRTWFP             =  Nom_Err_X_twf / Den_X;
 close(vdo_out_obj);
 

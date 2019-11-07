@@ -2,7 +2,7 @@ clc;
 clear;
 close all;
 
-ob = VideoReader('Mouse.mp4');
+ob = VideoReader('videos/sara.mp4');
 %ob = VideoReader('videos/sara.mp4');
 vidFrames = read(ob);
 %numFrames = get(ob, 'numberOfFrames');
@@ -20,7 +20,7 @@ end
 
 n_1     =   p;
 n_2     =   d;
-r       =   25;
+r       =   5;
 q       =  numFrames ;
 MaxIter  =  50;
 X      =    I(:, 1 : q);
@@ -44,7 +44,7 @@ Params.q  =  q;   % Number of columns of the matrix for LRPR
 Params.r  =  25;     % Rank
 Params.m       =   n_1*n_2*L;     % Number of measurements
 
-Params.tnew = 10;    % Total number of main loops of new LRPR
+Params.tnew = 50;    % Total number of main loops of new LRPR
 Params.told = 5;    % Total number of main loops of Old LRPR
 
 Params.m_b = Params.m;          %Number of measuremnets for coefficient estimate
@@ -99,14 +99,14 @@ fprintf('data generation complete\n');
 % Afull_t  =	@(E) sum(sum( Masks1 .* ifft2(E), 3) , 4)* n_1 * n_2; %* size(E,3);
 % Afull_tk =	@(S) sum( Masks1 .* ifft2(S), 3)*n_1*n_2;% * size(E,1) * size(E,2) * size(E,3);
 
-% [B_hat, U_hat, Xhat, Uo_track] ...
-%     = LRPR_prac_video_new(Params, Paramsrwf, Y, Afull, Afull_t, Afull_tk, Masks, X);
+[B_hat, U_hat, Xhat, Uo_track] ...
+    = LRPR_prac_video_new(Params, Paramsrwf, Y, Afull, Afull_t, Afull_tk, Masks);
 %[Altmintime,Bhat, Uhat,Xhat] = alt_min_init(Y, Params, Afull, Afull_t, Afull_tk);
 
-[B_hat, U_hat, Xhat, Uo_track] ...
-    = LRPR_video_model_corr(Params, Paramsrwf, Y, Afull, Afull_t, Afull_tk, Masks, X);
+% [B_hat, U_hat, Xhat, Uo_track] ...
+%     = LRPR_video_model_corr(Params, Paramsrwf, Y, Afull, Afull_t, Afull_tk, Masks, X);
 
-vdo_out_obj =   VideoWriter('out_30iter_rwf60_bef_mc');
+vdo_out_obj =   VideoWriter('plane_30iter_rwf60_bef_mc_r25_tmp');
 open(vdo_out_obj);
 Tmp_Err_X2   =   zeros(q, 1);
 for   t    =  1  :   q
